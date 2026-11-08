@@ -5,6 +5,8 @@
 > **¿qué está pasando en las vías?** y **¿qué tan riesgosa es la ruta que voy a tomar?**
 >
 > Hackathon de Datos ITM 2026 · Modalidad *Pipelines automáticos* · Equipo IA 02
+>
+> **En línea:** https://juanrob2024.github.io/ruta-segura-medellin/ · **Repositorio:** https://github.com/JuanRob2024/ruta-segura-medellin
 
 **Contenido**
 

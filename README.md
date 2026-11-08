@@ -1,5 +1,7 @@
 # Ruta Segura Medellín
 
+**[Abrir la página en línea](https://juanrob2024.github.io/ruta-segura-medellin/)** · [Ejemplo del cálculo de riesgo](https://juanrob2024.github.io/ruta-segura-medellin/docs/ejemplo_funcionamiento.html)
+
 **¿Qué tan riesgosa es tu ruta por Medellín?** Pipeline automático + página web con datos abiertos de **MEData**,
 **GeoMedellín**, **SIATA** y **datos.gov.co** · Hackathon de Datos ITM 2026 · Modalidad *Pipelines automáticos*.
 
@@ -12,6 +14,7 @@
 
 ## Probarlo
 
+* **En línea:** https://juanrob2024.github.io/ruta-segura-medellin/
 * **Sin instalar nada:** abrir `web/index.html` con doble clic (los datos agregados ya vienen incluidos).
 * **Regenerar todo desde las fuentes:**
 

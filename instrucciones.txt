@@ -9,8 +9,9 @@ Equipo: Equipo IA 02 · Hackathon de Datos ITM 2026 · Modalidad: Pipelines auto
    (3) dónde intervenir (puntos críticos sin cámara) y (4) datos, calidad y aporte a MEData.
 
 2. PROBARLO EN LÍNEA
-   Página: [COMPLETAR: enlace de GitHub Pages]/web/index.html
-   Repositorio: [COMPLETAR: enlace público de GitHub]
+   Página: https://juanrob2024.github.io/ruta-segura-medellin/
+   Ejemplo del cálculo de riesgo: https://juanrob2024.github.io/ruta-segura-medellin/docs/ejemplo_funcionamiento.html
+   Repositorio: https://github.com/JuanRob2024/ruta-segura-medellin
    Sin internet en línea: abrir web/index.html con doble clic (los datos ya vienen incluidos).
 
 3. EJECUTARLO (genera de nuevo todos los datos de la página)
