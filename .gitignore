@@ -1,0 +1,11 @@
+# datos generados por el pipeline (se descargan con `python -m etl run`)
+/data/
+/logs/
+# OJO: web/data SÍ se publica (agregados que lee la página en GitHub Pages)
+!/web/data/
+
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.claude/

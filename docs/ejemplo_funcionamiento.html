@@ -1,0 +1,188 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Cómo se calcula el riesgo</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Inter:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<link rel="stylesheet" href="../web/css/app.css">
+<style>
+  .steps { display: flex; gap: 6px; flex-wrap: wrap; }
+  .steps button { border: 1px solid var(--line); background: var(--panel); color: var(--fg); border-radius: 999px; padding: 6px 12px; font: 600 13px var(--font); cursor: pointer; }
+  .steps button.on { background: var(--accent); color: #fff; border-color: var(--accent); }
+  .lay { display: grid; gap: 16px; grid-template-columns: minmax(0, 1fr) minmax(0, 420px); align-items: start; }
+  @media (max-width: 960px) { .lay { grid-template-columns: 1fr; } }
+  .formula { font-family: ui-monospace, Consolas, monospace; background: var(--soft); border-radius: 8px; padding: 10px 12px; font-size: 13px; white-space: pre-wrap; }
+  .ctrl { display: grid; grid-template-columns: 110px 1fr 70px; gap: 8px; align-items: center; font-size: 13.5px; }
+  .ctrl input[type=range] { width: 100%; }
+  .pipe { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 8px; }
+  .pipe div { background: var(--soft); border-radius: 8px; padding: 10px; font-size: 12.5px; opacity: .45; transition: opacity .3s, outline .3s; }
+  .pipe div.on { opacity: 1; outline: 2px solid var(--accent); }
+  .pipe b { display: block; font-family: var(--font-head); font-size: 17px; }
+</style>
+</head>
+<body>
+<main>
+  <section class="view on" style="display:flex">
+    <div class="head">
+      <h1>Cómo se calcula el riesgo de una ruta</h1>
+      <p class="lede">Ejemplo real y paso a paso con los mismos datos y el mismo código de la página (<code>web/js/riesgo.js</code>):
+        ruta en carro de <b>Parque Berrío</b> a la <b>Universidad Nacional</b> (3,4 km). Mueve los controles para ver cómo cambia la probabilidad.</p>
+    </div>
+
+    <div class="card"><h3>El dato viaja así</h3>
+      <div class="pipe" id="pipe">
+        <div data-s="0"><b>1 · Fuentes</b>MEData, GeoMedellín, SIATA, datos.gov.co</div>
+        <div data-s="1"><b>2 · Limpieza</b>Comodines, duplicados, fuera de Medellín → cuarentena</div>
+        <div data-s="2"><b>3 · Grilla</b>Siniestros con heridos en celdas de ~55 m (2014-2025)</div>
+        <div data-s="3"><b>4 · Ruta</b>OSRM devuelve la línea; se muestrea cada 15 m</div>
+        <div data-s="4"><b>5 · Corredor</b>Celdas a ≤ 40 m de la ruta</div>
+        <div data-s="5"><b>6 · Probabilidad</b>Hora, día, lluvia y duración → Poisson</div>
+      </div>
+    </div>
+
+    <div class="steps" id="steps">
+      <button data-p="0" class="on">1. La ruta</button>
+      <button data-p="1">2. Muestreo cada 15 m</button>
+      <button data-p="2">3. Corredor de celdas</button>
+      <button data-p="3">4. Siniestros por año</button>
+      <button data-p="4">5. Hora, día y lluvia</button>
+      <button data-p="5">6. Resultado</button>
+    </div>
+
+    <div class="lay">
+      <div class="card" style="padding:10px"><div class="map big" id="map"></div></div>
+      <div class="card">
+        <h3 id="p-tit">—</h3>
+        <p id="p-txt" class="small"></p>
+        <div class="formula" id="p-form"></div>
+        <div id="p-extra"></div>
+        <hr style="border:0;border-top:1px solid var(--line);width:100%">
+        <h3>Prueba otros escenarios</h3>
+        <div class="ctrl"><label for="c-h">Hora de salida</label><input id="c-h" type="range" min="0" max="23" value="8"><b id="v-h"></b></div>
+        <div class="ctrl"><label for="c-d">Día</label><input id="c-d" type="range" min="0" max="6" value="0"><b id="v-d"></b></div>
+        <div class="ctrl"><label for="c-t">Duración</label><input id="c-t" type="range" min="3" max="60" value="10"><b id="v-t"></b></div>
+        <div class="ctrl"><label for="c-l">¿Llueve?</label><input id="c-l" type="checkbox"><span></span></div>
+        <div class="level"><span class="badge" id="r-nivel">—</span><span><span class="prob" id="r-p" style="font-size:36px">—</span><br>
+          <span class="small muted">probabilidad de un siniestro con heridos en el corredor durante el viaje</span></span></div>
+        <div class="chart" style="height:170px"><canvas id="ch"></canvas></div>
+      </div>
+    </div>
+    <p class="small muted">Esta página lee <code>web/data/grilla.js</code>, que genera <code>python -m etl run</code>. Volver a la
+      <a href="../web/index.html#ruta">consulta de ruta</a> · <a href="../DOCUMENTACION.md">documentación</a>.</p>
+  </section>
+</main>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="../web/data/grilla.js"></script>
+<script src="../web/data/meta.js"></script>
+<script src="../web/js/util.js"></script>
+<script src="../web/js/riesgo.js"></script>
+<script>
+const COORDS = [[-75.567823,6.249912],[-75.567768,6.250045],[-75.567751,6.250084],[-75.567708,6.250146],[-75.567662,6.250203],[-75.567637,6.250239],[-75.567617,6.25027],[-75.567597,6.250309],[-75.567582,6.250347],[-75.567458,6.250649],[-75.567371,6.25085],[-75.56733,6.250937],[-75.567389,6.251023],[-75.567434,6.2511],[-75.56746,6.251168],[-75.567477,6.251227],[-75.567493,6.25131],[-75.567503,6.251387],[-75.567505,6.251467],[-75.567497,6.251538],[-75.567488,6.251601],[-75.567463,6.251742],[-75.567424,6.251928],[-75.56742,6.25197],[-75.567422,6.252009],[-75.56743,6.252051],[-75.567451,6.25211],[-75.56749,6.252187],[-75.56756,6.252297],[-75.567593,6.252347],[-75.567613,6.252376],[-75.567624,6.252384],[-75.567646,6.252403],[-75.567687,6.252437],[-75.567759,6.252493],[-75.567818,6.252526],[-75.567863,6.25255],[-75.567889,6.252564],[-75.567963,6.252586],[-75.568035,6.2526],[-75.568368,6.252662],[-75.568491,6.252695],[-75.568515,6.252701],[-75.568544,6.252712],[-75.568796,6.252803],[-75.569231,6.252973],[-75.569324,6.253001],[-75.569339,6.253005],[-75.569375,6.253014],[-75.569417,6.253025],[-75.569501,6.253043],[-75.569671,6.253087],[-75.569766,6.253121],[-75.569887,6.253177],[-75.570181,6.253312],[-75.570316,6.253371],[-75.570384,6.253407],[-75.570666,6.253543],[-75.570772,6.253597],[-75.570855,6.253656],[-75.570934,6.25374],[-75.570995,6.253813],[-75.571045,6.253883],[-75.571147,6.254037],[-75.571219,6.254172],[-75.571268,6.254315],[-75.571302,6.254432],[-75.571309,6.254505],[-75.57131,6.254573],[-75.571298,6.254748],[-75.571282,6.254846],[-75.571272,6.254907],[-75.571232,6.255155],[-75.571198,6.255262],[-75.571167,6.255408],[-75.571156,6.255507],[-75.571155,6.25559],[-75.571166,6.255708],[-75.571201,6.255855],[-75.571226,6.255925],[-75.571257,6.255994],[-75.571287,6.256048],[-75.57133,6.256116],[-75.571561,6.256472],[-75.571664,6.256645],[-75.571705,6.256709],[-75.571726,6.256772],[-75.571731,6.256825],[-75.571727,6.256873],[-75.571717,6.256913],[-75.571701,6.25695],[-75.571682,6.256982],[-75.571659,6.25701],[-75.571637,6.257033],[-75.571556,6.257065],[-75.571506,6.257095],[-75.571471,6.257125],[-75.571244,6.257397],[-75.571208,6.257435],[-75.571008,6.257626],[-75.570832,6.257798],[-75.570722,6.257907],[-75.570697,6.257938],[-75.570676,6.257973],[-75.570655,6.25801],[-75.570631,6.258062],[-75.570614,6.25812],[-75.570553,6.258251],[-75.570571,6.25832],[-75.570599,6.258381],[-75.570632,6.258435],[-75.57065,6.258462],[-75.570681,6.2585],[-75.570723,6.258544],[-75.570757,6.258566],[-75.570806,6.258592],[-75.57087,6.25861],[-75.571175,6.258671],[-75.571518,6.258779],[-75.57168,6.258819],[-75.571762,6.258843],[-75.571842,6.258872],[-75.571914,6.258907],[-75.572005,6.258952],[-75.572095,6.259003],[-75.572157,6.259043],[-75.572227,6.259102],[-75.572375,6.259245],[-75.573116,6.260285],[-75.57415,6.261661],[-75.574239,6.261774],[-75.574312,6.261983],[-75.574338,6.262074],[-75.574355,6.262134],[-75.574363,6.262208],[-75.574359,6.262271],[-75.57435,6.262325],[-75.574322,6.262407],[-75.574278,6.262481],[-75.574218,6.262538],[-75.574149,6.262574],[-75.574082,6.262587],[-75.574027,6.26259],[-75.573978,6.262587],[-75.57392,6.262576],[-75.573856,6.262541],[-75.573801,6.262492],[-75.573755,6.262429],[-75.573728,6.262369],[-75.573707,6.262281],[-75.573697,6.262207],[-75.573691,6.262055],[-75.573829,6.261706],[-75.573888,6.261569],[-75.574002,6.261322],[-75.574143,6.261051],[-75.574338,6.260677],[-75.574988,6.259963],[-75.57508,6.259867],[-75.575153,6.259794],[-75.57522,6.259729],[-75.575281,6.259681],[-75.575347,6.259638],[-75.575402,6.259609],[-75.575459,6.259584],[-75.575518,6.259564],[-75.575591,6.259543],[-75.576106,6.259388],[-75.576173,6.25937],[-75.576239,6.259356],[-75.576298,6.259348],[-75.576535,6.259337],[-75.577164,6.25933],[-75.577951,6.259308],[-75.578251,6.259261],[-75.578514,6.259167],[-75.578748,6.259035],[-75.57912,6.258833],[-75.579325,6.258784],[-75.579514,6.258786],[-75.579981,6.258859],[-75.580023,6.258866],[-75.58001,6.258907],[-75.579986,6.258971],[-75.579831,6.259467],[-75.579818,6.259522],[-75.579761,6.259726],[-75.579742,6.259786],[-75.579736,6.25981],[-75.579689,6.259965],[-75.57959,6.260152],[-75.579569,6.260198],[-75.579558,6.260241],[-75.579556,6.260286],[-75.579564,6.260462],[-75.57955,6.2605],[-75.579539,6.260519],[-75.579524,6.260543],[-75.579512,6.260556],[-75.579502,6.260566],[-75.579487,6.260575],[-75.579466,6.260583],[-75.579447,6.260587],[-75.579324,6.260601],[-75.579091,6.260611],[-75.578743,6.260499],[-75.578696,6.260487],[-75.578671,6.260482],[-75.578628,6.260481],[-75.578611,6.260469],[-75.578583,6.260457],[-75.578553,6.260451],[-75.578523,6.260452],[-75.578508,6.260454],[-75.578483,6.260463],[-75.57846,6.260477],[-75.57844,6.260495],[-75.578421,6.260521],[-75.578409,6.260551],[-75.578405,6.260583],[-75.578408,6.260615],[-75.578419,6.260646],[-75.578413,6.26076],[-75.578407,6.260834],[-75.578395,6.260903],[-75.57837,6.261035],[-75.578285,6.261483],[-75.578323,6.261561],[-75.578312,6.261606],[-75.578305,6.261637]];
+const DUR_OSRM_MIN = 5;
+const G = RSM.grilla, DIAS = ['lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado', 'domingo'];
+const COL = { 'Bajo': '#2e8b57', 'Medio': '#d4a017', 'Alto': '#e0671b', 'Muy alto': '#c0392b' };
+U.chartDefaults();
+const map = U.mapa('map', { scroll: true });
+const capa = L.layerGroup().addTo(map);
+const latlng = COORDS.map(([lo, la]) => [la, lo]);
+map.fitBounds(latlng, { padding: [40, 40] });
+const { celdas, puntos } = Riesgo.corredor(COORDS, G);
+const maxC = Math.max(...[...celdas.values()].filter(Boolean).map((c) => c[2]));
+
+function fecha() {
+  const d = +U.$('#c-d').value, h = +U.$('#c-h').value;
+  const f = new Date(2026, 10, 9 + d, h, 0); // 9-nov-2026 es lunes
+  return f;
+}
+function evaluar() {
+  return Riesgo.evaluar(COORDS, G, { fecha: fecha(), duracionMin: +U.$('#c-t').value, lluvia: U.$('#c-l').checked });
+}
+
+const PASOS = [
+  () => {
+    L.polyline(latlng, { color: '#0f6cbd', weight: 6 }).addTo(capa);
+    return ['1 · La ruta', `OSRM (OpenStreetMap) devuelve la geometría de la ruta: ${COORDS.length} vértices, ${U.n1(Riesgo.muestrear(COORDS).largo / 1000)} km.
+      Es la misma consulta que hace la página al pulsar «Calcular».`,
+      `GET router.project-osrm.org/route/v1/driving/\n  -75.56814,6.25004;-75.57768,6.26150\n  ?alternatives=true&geometries=geojson`, 3];
+  },
+  () => {
+    L.polyline(latlng, { color: '#8a94a3', weight: 3 }).addTo(capa);
+    puntos.forEach((p) => L.circleMarker([p.lat, p.lon], { radius: 2, color: '#0f6cbd', weight: 1, fillOpacity: 1 }).addTo(capa));
+    return ['2 · Muestreo cada 15 m', `Se reparte la línea en ${U.n0(puntos.length)} puntos, uno cada 15 m, para no saltarse ninguna celda aunque la vía sea recta y larga.`,
+      `puntos = muestrear(ruta, paso = 15 m)\n→ ${puntos.length} puntos`, 3];
+  },
+  () => {
+    L.polyline(latlng, { color: '#8a94a3', weight: 2 }).addTo(capa);
+    for (const [k, c] of celdas) {
+      const [i, j] = k.split(',').map(Number);
+      const b = [[G.lat0 + i * G.deg, G.lon0 + j * G.deg], [G.lat0 + (i + 1) * G.deg, G.lon0 + (j + 1) * G.deg]];
+      const v = c ? c[2] : 0;
+      L.rectangle(b, { weight: .5, color: '#555', fillColor: v ? '#c0392b' : '#9aa6b2', fillOpacity: v ? .15 + .75 * Math.sqrt(v / maxC) : .12 })
+        .bindTooltip(`${U.n0(v)} siniestros con heridos (2014-2025)`).addTo(capa);
+    }
+    return ['3 · Corredor de celdas', `La ciudad está dividida en celdas de ~55 m (${U.n0(G.celdas.length)} con algún registro). El corredor son las
+      <b>${U.n0(celdas.size)} celdas</b> cuyo centro está a menos de 40 m de algún punto de la ruta: la vía y sus andenes, sin incluir calles paralelas.
+      Más rojo = más siniestros.`, `corredor = { celda | distancia(centro, ruta) ≤ 40 m }\n→ ${celdas.size} celdas`, 4];
+  },
+  () => {
+    PASOS[2]();
+    const ev = evaluar();
+    return ['4 · Siniestros por año', `En esas celdas ocurrieron <b>${U.n0(ev.siniestros)}</b> siniestros con heridos o muertos entre ${U.fecha(G.desde)} y ${U.fecha(G.hasta)}
+      (${U.n1(G.anios)} años). Se usan solo con heridos porque GeoMedellín dejó de publicar los de «solo daños» en 2023.`,
+      `λ_año = Σ siniestros / años\n      = ${U.n0(ev.siniestros)} / ${U.n1(G.anios)} = ${U.n1(ev.anual)} por año\n\nmedia por celda = ${U.n2(ev.media)}  (típico: ${U.n2(G.media_ref)})\n→ ${U.n2(ev.veces)}× · nivel «${ev.nivel}»`, 4];
+  },
+  () => {
+    PASOS[2]();
+    const ev = evaluar();
+    const f = fecha();
+    return ['5 · Hora, día y lluvia', `Los siniestros no se reparten parejo: a las ${f.getHours()}:00 ocurre el ${U.pct(G.perfil_hora[f.getHours()])} de los del día, y el ${DIAS[ev.dia]}
+      concentra el ${U.pct(G.perfil_dia[ev.dia])} de la semana. Si llueve, se ajusta con la razón medida con la estación IDEAM (${U.n2(G.rr_lluvia)}×).`,
+      `λ_hora = λ_año / 365 × 7·p_día × p_hora × f_lluvia\n       = ${U.n1(ev.anual)}/365 × ${U.n2(7 * G.perfil_dia[ev.dia])} × ${U.n2(G.perfil_hora[ev.hora])} × ${U.n2(ev.fLluvia)}\n       = ${ev.lambdaHora.toFixed(4)} siniestros por hora`, 5];
+  },
+  () => {
+    PASOS[2]();
+    const ev = evaluar();
+    return ['6 · Resultado', `Durante los ${U.$('#c-t').value} minutos del viaje se esperan ${ev.lambdaViaje.toFixed(4)} siniestros con heridos en el corredor.
+      Con un proceso de Poisson, la probabilidad de que ocurra al menos uno es <b>${U.pct(ev.pViaje, 2)}</b>. No es la probabilidad de que tú
+      te accidentes: dice qué tan frecuentes son los siniestros en las vías que recorres, y permite comparar rutas y horas.`,
+      `λ_viaje = λ_hora × duración = ${ev.lambdaHora.toFixed(4)} × ${(U.$('#c-t').value / 60).toFixed(3)} h\nP = 1 − e^(−λ_viaje) = ${U.pct(ev.pViaje, 3)}`, 5];
+  },
+];
+
+let paso = 0, chart;
+function pintar() {
+  capa.clearLayers();
+  const [t, txt, form, etapa] = PASOS[paso]();
+  U.$('#p-tit').textContent = t; U.$('#p-txt').innerHTML = txt; U.$('#p-form').textContent = form;
+  document.querySelectorAll('#steps button').forEach((b) => b.classList.toggle('on', +b.dataset.p === paso));
+  document.querySelectorAll('#pipe div').forEach((d) => d.classList.toggle('on', +d.dataset.s <= etapa));
+  resultado();
+}
+function resultado() {
+  const ev = evaluar();
+  U.$('#v-h').textContent = U.$('#c-h').value + ':00';
+  U.$('#v-d').textContent = DIAS[+U.$('#c-d').value];
+  U.$('#v-t').textContent = U.$('#c-t').value + ' min';
+  const b = U.$('#r-nivel'); b.textContent = ev.nivel; b.className = 'badge lvl-' + ev.nivel.split(' ')[0];
+  U.$('#r-p').textContent = U.pct(ev.pViaje, 2);
+  const data = Array.from({ length: 24 }, (_, h) => {
+    const f = fecha(); f.setHours(h);
+    return 100 * Riesgo.evaluar(COORDS, G, { fecha: f, duracionMin: +U.$('#c-t').value, lluvia: U.$('#c-l').checked }).pViaje;
+  });
+  if (!chart) {
+    chart = new Chart(U.$('#ch'), { type: 'bar', data: { labels: data.map((_, h) => h), datasets: [{ data, backgroundColor: data.map(() => '#0f6cbd') }] },
+      options: { plugins: { legend: { display: false }, title: { display: true, text: 'Probabilidad del viaje según la hora de salida (%)' } }, scales: { y: { beginAtZero: true } } } });
+  }
+  chart.data.datasets[0].data = data;
+  chart.data.datasets[0].backgroundColor = data.map((_, h) => (h === +U.$('#c-h').value ? '#c0392b' : '#0f6cbd'));
+  chart.update();
+}
+U.$('#steps').addEventListener('click', (e) => { const b = e.target.closest('button'); if (b) { paso = +b.dataset.p; pintar(); } });
+['#c-h', '#c-d', '#c-t', '#c-l'].forEach((s) => U.$(s).addEventListener('input', () => (paso >= 3 ? pintar() : resultado())));
+pintar();
+</script>
+</body>
+</html>

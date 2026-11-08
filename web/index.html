@@ -1,0 +1,205 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ruta Segura Medellín</title>
+<meta name="description" content="Siniestralidad vial de Medellín con datos abiertos de MEData, GeoMedellín, SIATA y datos.gov.co: diagnóstico, consulta de riesgo por ruta, cámaras y clima.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Inter:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<link rel="stylesheet" href="css/app.css">
+</head>
+<body>
+<header class="top">
+  <div class="in">
+    <a class="brand" href="#inicio"><span class="logo">⬢</span>Ruta Segura Medellín</a>
+    <nav class="tabs" aria-label="Módulos">
+      <a href="#inicio">Inicio</a>
+      <a href="#diagnostico">1 · ¿Qué está pasando?</a>
+      <a href="#ruta">2 · Consulta tu ruta</a>
+      <a href="#intervenir">3 · ¿Dónde intervenir?</a>
+      <a href="#datos">4 · Datos y calidad</a>
+    </nav>
+    <span class="meta" id="meta-gen">—</span>
+  </div>
+</header>
+
+<main>
+  <!-- =============================================================== INICIO -->
+  <section class="view" id="v-inicio">
+    <div class="hero">
+      <div class="head">
+        <h1>¿Qué tan riesgosa es tu ruta por Medellín?</h1>
+        <p class="lede">Unimos <b>11 años</b> de siniestros viales de <b>MEData</b> y <b>GeoMedellín</b> con las cámaras de
+          tránsito y la lluvia registrada por <b>IDEAM/SIATA</b>. Mira qué está pasando en la ciudad, consulta el riesgo de
+          tu recorrido y descubre dónde hace falta vigilancia.</p>
+        <div class="cta">
+          <a class="btn primary" href="#ruta">Consultar una ruta →</a>
+          <a class="btn" href="#diagnostico">Ver el diagnóstico</a>
+        </div>
+      </div>
+      <div class="card" id="hallazgos-inicio"></div>
+    </div>
+    <div class="mods">
+      <a class="mod" href="#diagnostico"><div class="card"><span class="n">MÓDULO 1</span><h3>¿Qué está pasando?</h3>
+        <p class="muted small">Evolución, horas y días críticos, factores influyentes, actores viales y comunas.</p></div></a>
+      <a class="mod" href="#ruta"><div class="card"><span class="n">MÓDULO 2</span><h3>Consulta tu ruta</h3>
+        <p class="muted small">Probabilidad de siniestro en tu recorrido, tramos críticos, cámaras en la vía, lluvia y recomendaciones.</p></div></a>
+      <a class="mod" href="#intervenir"><div class="card"><span class="n">MÓDULO 3</span><h3>¿Dónde intervenir?</h3>
+        <p class="muted small">Puntos críticos sin cámara a 300 m: priorización para la Secretaría de Movilidad.</p></div></a>
+      <a class="mod" href="#datos"><div class="card"><span class="n">MÓDULO 4</span><h3>Datos y calidad</h3>
+        <p class="muted small">Fuentes, reglas de limpieza, cuarentena y propuesta de mejora a MEData.</p></div></a>
+    </div>
+  </section>
+
+  <!-- =============================================================== MÓDULO 1 -->
+  <section class="view" id="v-diagnostico">
+    <div class="head">
+      <h2>1 · ¿Qué está pasando en las vías de Medellín?</h2>
+      <p class="muted">Siniestros con heridos o muertos de la serie unificada MEData + GeoMedellín (sin duplicados), víctimas de MEData
+        y muertes del SISC. <span id="d-periodo"></span></p>
+    </div>
+    <div class="kpis" id="d-kpis"></div>
+    <div class="grid two">
+      <div class="card"><h3>Evolución anual</h3>
+        <p class="note" id="d-serie-nota"></p>
+        <div class="chart tall"><canvas id="ch-serie"></canvas></div></div>
+      <div class="card"><h3>¿A qué hora y qué día?</h3>
+        <p class="note">Siniestros con heridos o muertos por hora y día de la semana. Más oscuro = más siniestros.</p>
+        <div class="heat" id="d-heat"></div>
+        <div class="legend"><span>Menos</span><span id="d-heat-leg" style="display:flex;gap:2px"></span><span>Más</span></div></div>
+    </div>
+    <div class="card"><h3>Factores influyentes</h3>
+      <p class="note">Cada barra es una tasa comparable (por día, por hora o por cada 1.000 víctimas). El número de la derecha dice cuántas veces
+        es la categoría frente a la de referencia (gris). Así se compara sin que pese que haya más días hábiles que festivos.</p>
+      <div class="grid" id="d-factores"></div></div>
+    <div class="grid two">
+      <div class="card"><h3>¿Quiénes son las víctimas?</h3>
+        <p class="note">Víctimas por actor vial (MEData 2014-2021) y cuántas mueren por cada 1.000.</p>
+        <div class="chart"><canvas id="ch-actor"></canvas></div></div>
+      <div class="card"><h3>Edad y sexo de las víctimas</h3>
+        <p class="note">Víctimas por grupo de edad (MEData 2014-2021).</p>
+        <div class="chart"><canvas id="ch-edad"></canvas></div></div>
+    </div>
+    <div class="grid two">
+      <div class="card"><h3>Puntos críticos</h3>
+        <p class="note">Celdas de ~110 m con 15 o más siniestros con heridos o muertos (2014-2025). El tamaño indica el número de siniestros. En azul, las cámaras CCTV.</p>
+        <div class="map" id="map-diag"></div></div>
+      <div class="card"><h3>Comunas</h3>
+        <p class="note">Ubicadas con el polígono oficial. En rojo, las comunas sin ninguna cámara CCTV.</p>
+        <div class="tbl"><table id="t-comunas"></table></div></div>
+    </div>
+  </section>
+
+  <!-- =============================================================== MÓDULO 2 -->
+  <section class="view" id="v-ruta">
+    <div class="head">
+      <h2>2 · Consulta tu ruta</h2>
+      <p class="muted">Escribe origen y destino (o márcalos en el mapa). Calculamos hasta 3 rutas, el riesgo histórico de cada una, las cámaras
+        en el camino, la lluvia en vivo de SIATA y recomendaciones para tu viaje.</p>
+    </div>
+    <div class="ruta">
+      <div class="card form">
+        <div class="field"><label for="f-origen">Origen</label>
+          <div class="row"><input id="f-origen" placeholder="Ej.: Parque Berrío" autocomplete="off">
+            <button class="ico" id="b-pick-o" title="Marcar el origen en el mapa">📍</button>
+            <button class="ico" id="b-geo" title="Usar mi ubicación">◎</button></div>
+          <div class="sug" id="s-origen" hidden></div></div>
+        <div class="field"><label for="f-destino">Destino</label>
+          <div class="row"><input id="f-destino" placeholder="Ej.: Universidad Nacional" autocomplete="off">
+            <button class="ico" id="b-pick-d" title="Marcar el destino en el mapa">🏁</button></div>
+          <div class="sug" id="s-destino" hidden></div></div>
+        <div class="field"><label for="f-hora">Salida</label><input id="f-hora" type="datetime-local"></div>
+        <div class="field"><label>¿Cómo viajas?</label>
+          <div class="seg" id="f-medio">
+            <button data-m="carro" class="on">Carro</button><button data-m="moto">Moto</button>
+            <button data-m="bici">Bici</button><button data-m="pie">A pie</button></div></div>
+        <button class="btn primary" id="b-calc">Calcular ruta y riesgo</button>
+        <p class="status" id="r-status">Las rutas usan OSRM y la búsqueda usa Photon (OpenStreetMap), gratis y sin llave. Hacemos una sola consulta por clic.</p>
+        <div class="alts" id="r-alts"></div>
+      </div>
+      <div class="card" style="padding:10px"><div class="map big" id="map-ruta"></div></div>
+    </div>
+    <div id="r-result" hidden>
+      <div class="grid">
+        <div class="card"><h3>Riesgo de la ruta</h3>
+          <div class="level"><span class="badge" id="r-nivel">—</span><span class="muted small" id="r-veces"></span></div>
+          <div><span class="prob" id="r-prob">—</span>
+            <p class="small">probabilidad de que ocurra un siniestro con heridos en el corredor de tu ruta <b>mientras viajas</b>
+              (<span id="r-dur"></span>, salida <span id="r-sal"></span>).</p></div>
+          <div class="wx" id="r-nums"></div>
+          <details class="explain"><summary>¿Cómo se calcula?</summary><p id="r-metodo"></p></details></div>
+        <div class="card"><h3>Clima para tu viaje</h3>
+          <div class="wx" id="r-clima"></div>
+          <h3 style="margin-top:6px">Recomendaciones</h3>
+          <ul class="recs" id="r-recs"></ul></div>
+      </div>
+      <div class="grid two" style="margin-top:16px">
+        <div class="card"><h3>Tramos críticos en tu ruta</h3>
+          <p class="note">Puntos críticos (celdas de ~110 m) a menos de 60 m del recorrido, del más al menos siniestrado.</p>
+          <div class="tbl"><table id="r-tramos"></table></div>
+          <p class="note" id="r-comp"></p></div>
+        <div class="card"><h3>Cámaras en tu ruta</h3>
+          <p class="note">Cámaras de tránsito a menos de 150 m del recorrido (GeoMedellín). Las CCTV muestran su foto en vivo del SIMM.</p>
+          <div class="cams" id="r-cams"></div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- =============================================================== MÓDULO 3 -->
+  <section class="view" id="v-intervenir">
+    <div class="head">
+      <h2>3 · ¿Dónde intervenir?</h2>
+      <p class="muted" id="i-lede"></p>
+    </div>
+    <div class="grid two">
+      <div class="card"><h3>Puntos prioritarios sin cámara CCTV</h3>
+        <p class="note" id="i-regla"></p>
+        <div class="map big" id="map-int"></div></div>
+      <div class="card"><h3>Ranking</h3>
+        <div class="tbl" style="max-height:560px"><table id="t-int"></table></div></div>
+    </div>
+    <div class="card"><h3>Comunas sin ninguna cámara CCTV</h3>
+      <p class="note">Siniestros con heridos o muertos 2019-2025 en comunas y corregimientos donde GeoMedellín no registra cámaras de circuito cerrado.</p>
+      <div class="chart"><canvas id="ch-sincctv"></canvas></div></div>
+  </section>
+
+  <!-- =============================================================== MÓDULO 4 -->
+  <section class="view" id="v-datos">
+    <div class="head">
+      <h2>4 · Datos y calidad</h2>
+      <p class="muted">De dónde salen los datos, qué ruido traen y cómo se limpian. Todo lo genera el pipeline <code>python -m etl run</code>.</p>
+    </div>
+    <div class="card"><h3>Del portal a esta página</h3><div class="flow" id="d-flow"></div></div>
+    <div class="card"><h3>Fuentes</h3><div class="tbl"><table id="t-fuentes"></table></div></div>
+    <div class="card"><h3>Reglas de limpieza aplicadas (conteos de la última ejecución)</h3><div class="grid" id="d-reglas"></div></div>
+    <div class="grid two">
+      <div class="card"><h3>Lo que encontramos en MEData</h3><ul class="recs" id="d-hall"></ul></div>
+      <div class="card prop"><h3>Propuesta de apertura y mejora</h3><ul class="recs" id="d-prop"></ul></div>
+    </div>
+  </section>
+</main>
+<footer>
+  Datos: Alcaldía de Medellín (MEData, GeoMedellín, SIMM), SIATA y IDEAM vía datos.gov.co, bajo licencia CC BY-SA 4.0. Mapa base ©
+  colaboradores de OpenStreetMap. Rutas: OSRM. Búsqueda: Photon (komoot). Hackathon de Datos ITM 2026 · <a href="../DOCUMENTACION.md">Documentación técnica</a>
+</footer>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="data/meta.js"></script>
+<script src="data/diagnostico.js"></script>
+<script src="data/grilla.js"></script>
+<script src="data/camaras.js"></script>
+<script src="data/clima.js"></script>
+<script src="data/intervencion.js"></script>
+<script src="data/calidad.js"></script>
+<script src="js/util.js"></script>
+<script src="js/riesgo.js"></script>
+<script src="js/diagnostico.js"></script>
+<script src="js/ruta.js"></script>
+<script src="js/intervencion.js"></script>
+<script src="js/datos.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,58 @@
+/* Módulo 4 · Datos y calidad */
+(function () {
+  const FUENTES = [
+    ['MEData', 'Víctimas en Incidentes viales', '1-023-25-000360', 'https://medata.app.medellin.gov.co/dataset/1-023-25-000360', 'Víctimas: gravedad, actor vial, edad, sexo, ubicación', 'fact_victima'],
+    ['MEData', 'Incidentes viales', '1-023-25-000094', 'https://medata.app.medellin.gov.co/dataset/1-023-25-000094', 'Siniestros 2014-07 a 2020-08 de la serie unificada', 'fact_incidente'],
+    ['MEData', 'Lesión fatal accidente de tránsito según Policía (SISC)', '1-027-23-000019', 'https://medata.app.medellin.gov.co/dataset/1-027-23-000019', 'Muertes 2003-2023; muertes en la grilla desde sep-2020', 'fact_muerte_sisc'],
+    ['MEData', 'Lesión fatal … con precipitación', '1-027-23-000307', 'https://medata.app.medellin.gov.co/dataset/1-027-23-000307', 'Solo perfilado: la columna de precipitación llega vacía', null],
+    ['MEData', 'Incidentes con motos · Aforos · Velocidad GT', '1-023-25-000277 / 301 / 287', 'https://medata.app.medellin.gov.co/', 'Exposición (staging para análisis futuros)', 'stg_aforos'],
+    ['Distrito · GeoMedellín', 'Siniestralidad (VM_Accidentes)', 'ArcGIS REST', 'https://www.medellin.gov.co/servidormapas/rest/services/transporte/VM_Accidentes/MapServer/0', 'Siniestros desde sep-2020 de la serie unificada', 'fact_siniestro'],
+    ['Distrito · GeoMedellín', 'Cámaras CCTV, fotodetección y apoyo semafórico', 'ArcGIS REST', 'https://www.medellin.gov.co/servidormapas/rest/services/transporte/VC_Infraest_Gestion_Transito/MapServer', 'Cámaras en la ruta y cobertura a 300 m', 'dim_camara'],
+    ['Distrito · GeoMedellín', 'Límite de comunas y corregimientos', 'ArcGIS REST', 'https://www.medellin.gov.co/servidormapas/rest/services/mapas_nacionales/VC_Limite_Politico_Admtivo/MapServer', 'Validar coordenadas y asignar comuna', 'dim_comuna'],
+    ['Distrito · SIMM', 'Cámaras de circuito cerrado (foto en vivo)', 'HTTP', 'https://www.medellin.gov.co/simm/camaras-de-circuito-cerrado', 'Foto de cada cámara en la ruta', null],
+    ['SIATA', 'Pluviómetros en tiempo real', 'JSON', 'https://siata.gov.co/data/siata_app/Pluviometrica.json', 'Lluvia ahora cerca de la ruta (en vivo)', null],
+    ['datos.gov.co · IDEAM', 'Precipitación (s54a-sgyg), estación Olaya Herrera', 'Socrata API', 'https://www.datos.gov.co/Ambiente-y-Desarrollo-Sostenible/Precipitaci-n/s54a-sgyg', 'Efecto de la lluvia y probabilidad histórica de lluvia', 'fact_clima_hora'],
+  ];
+
+  function render() {
+    const M = RSM.meta;
+    U.$('#d-flow').replaceChildren(...[
+      ['1 · Extraer', 'MEData (DKAN), GeoMedellín (ArcGIS), datos.gov.co (Socrata), SIATA. Incremental, con reintentos.'],
+      ['2 · Limpiar', 'Texto, fechas, coordenadas, comodines, duplicados. Lo inservible va a cuarentena con su motivo.'],
+      ['3 · Integrar', 'Serie unificada sin duplicados, comuna por polígono, cámara más cercana, lluvia de la hora, festivos.'],
+      ['4 · Cargar', 'Parquet + bodega DuckDB con vistas SQL y reporte de calidad.'],
+      ['5 · Publicar', `Agregados para esta página (web/data). Última corrida: ${M.generado}.`],
+    ].map(([t, d]) => U.el(`<div class="st"><b>${t}</b>${d}</div>`)));
+
+    U.$('#t-fuentes').innerHTML = `<thead><tr><th>Entidad</th><th>Conjunto</th><th>Id / acceso</th><th>Uso en la página</th><th class="n">Filas cargadas</th></tr></thead><tbody>${
+      FUENTES.map(([e, n, id, url, uso, tabla]) => `<tr><td>${e}</td><td><a href="${url}" target="_blank" rel="noopener">${U.esc(n)}</a></td><td class="small">${id}</td>
+      <td class="small">${uso}</td><td class="n">${tabla && M.filas[tabla] != null ? U.n0(M.filas[tabla]) : '—'}</td></tr>`).join('')}</tbody>`;
+
+    U.$('#d-reglas').replaceChildren(...RSM.calidad.fuentes.filter((f) => f.reglas.length).map((f) => U.el(`<div>
+      <h3 style="font-size:15px">${U.esc(f.nombre)}</h3>
+      <p class="note">${f.leidas != null ? U.n0(f.leidas) + ' filas leídas' : ''}${f.limpias != null ? ' → ' + U.n0(f.limpias) + ' limpias' : ''}${f.rango ? ' · ' + f.rango.join(' a ') : ''}</p>
+      <table><tbody>${f.reglas.map((r) => `<tr><td>${U.esc(r.regla)}</td><td class="n">${U.n0(r.n)}</td></tr>`).join('')}</tbody></table></div>`)));
+
+    const cal = Object.fromEntries(RSM.calidad.fuentes.map((f) => [f.id, Object.fromEntries(f.reglas.map((r) => [r.regla, r.n]))]));
+    const g = (ds, r) => (cal[ds] || {})[r];
+    const hall = [
+      ['📄', `<b>Víctimas en incidentes viales</b> trae ${U.n0(g('victimas', 'Filas vacías eliminadas'))} filas vacías (el 77 % del archivo): está rellenado hasta el límite de Excel.`],
+      ['📅', '<b>Víctimas</b> declara actualización mensual, pero llega solo a sept-2021; <b>Incidentes viales</b>, a ago-2020.'],
+      ['📍', `<b>Incidentes viales</b> usa la coordenada comodín [-75,7037; 6,2214] en ${U.n0(g('incidentes', 'Coordenada comodín anulada'))} registros. En GeoMedellín encontramos además ${U.n0(g('siniestralidad', 'Comodín detectado (punto repetido con direcciones dispersas)'))} siniestros en puntos repetidos que reciben direcciones de toda la ciudad (comodines no declarados).`],
+      ['🔤', `Textos con escapes hexadecimales («Solo da\\xF1os») en ${U.n0(g('incidentes', 'Texto con escapes \\xNN reparado'))} filas y el año con «\\r» pegado.`],
+      ['🌧️', '<b>Lesión fatal … con precipitación</b>: la columna <code>precipitacion</code> está 100 % vacía en las 1.047 filas.'],
+      ['🗂️', 'GeoMedellín dejó de publicar los siniestros «solo daños» desde 2023 (de ~14 mil a ~90 por año) sin advertirlo.'],
+    ];
+    U.$('#d-hall').replaceChildren(...hall.map(([i, t]) => U.el(`<li><span>${i}</span><span>${t}</span></li>`)));
+    const prop = [
+      ['1', 'Actualizar <b>Víctimas</b> e <b>Incidentes viales</b> desde oct-2021 con la periodicidad mensual que declara la ficha, sin filas vacías, en UTF-8 y con coordenada nula en vez de comodín.'],
+      ['2', 'Agregar <code>COD_COMUNA</code> y <code>NRO_RADICADO</code> en ambos conjuntos para unirlos sin heurísticas.'],
+      ['3', 'Llenar la columna <code>precipitacion</code> del conjunto SISC con la estación SIATA más cercana, o retirarla de la ficha.'],
+      ['4', 'Abrir un conjunto <b>Cámaras de tránsito</b> con <code>ID_CAMARA, TIPO, LATITUD, LONGITUD, FECHA_INSTALACION</code>: permitiría medir si la siniestralidad baja alrededor de una cámara después de instalarla.'],
+    ];
+    U.$('#d-prop').replaceChildren(...prop.map(([i, t]) => U.el(`<li><span><b>${i}</b></span><span>${t}</span></li>`)));
+  }
+
+  let listo = false;
+  window.Datos = { init() { if (!listo) { listo = true; render(); } } };
+})();
