@@ -16,7 +16,7 @@
     const max = I.puntos[0]?.puntaje || 1;
     I.puntos.forEach((p, k) => {
       L.marker([p.lat, p.lon], {
-        icon: L.divIcon({ className: '', html: `<div style="background:#E53945;color:#08090B;border-radius:0;;width:${22 + 10 * p.puntaje / max}px;height:${22 + 10 * p.puntaje / max}px;display:grid;place-items:center;font:700 12px 'IBM Plex Mono',monospace;border:1px solid #F0F0F0">${k + 1}</div>`, iconSize: [30, 30], iconAnchor: [15, 15] }),
+        icon: L.divIcon({ className: '', html: `<div style="background:#E53945;color:#08090B;border-radius:0;;width:${22 + 10 * p.puntaje / max}px;height:${22 + 10 * p.puntaje / max}px;display:grid;place-items:center;font:700 13px Inter,sans-serif;border:1px solid #F0F0F0">${k + 1}</div>`, iconSize: [30, 30], iconAnchor: [15, 15] }),
       }).bindTooltip(`<b>${k + 1}. ${U.esc(p.dir || '')}</b><br>${U.esc(p.comuna || '')}<br>${U.n0(p.con_heridos)} siniestros con heridos · ${U.n0(p.muertes)} muertes<br>CCTV más cercana: ${U.n0(p.dist_cctv)} m`).addTo(mapa);
     });
     if (I.puntos.length) mapa.fitBounds(I.puntos.map((p) => [p.lat, p.lon]), { padding: [30, 30] });

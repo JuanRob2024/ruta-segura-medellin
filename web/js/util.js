@@ -38,11 +38,12 @@
     /* Chart.js con los colores del tema */
     chartDefaults() {
       if (!window.Chart) return;
-      Chart.defaults.font.family = 'Space Grotesk, system-ui, sans-serif';
+      Chart.defaults.font.family = 'Inter, system-ui, sans-serif';
       Chart.defaults.color = U.color('--muted');
       Chart.defaults.borderColor = U.color('--line');
       Chart.defaults.plugins.legend.labels.boxWidth = 10;
-      Chart.defaults.plugins.legend.labels.font = { family: 'IBM Plex Mono, monospace', size: 11 };
+      Chart.defaults.plugins.legend.labels.font = { size: 13 };
+      Chart.defaults.font.size = 13;
       Chart.defaults.elements.bar.borderRadius = 0;
       Chart.defaults.maintainAspectRatio = false;
     },
