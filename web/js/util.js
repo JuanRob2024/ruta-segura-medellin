@@ -14,8 +14,8 @@
     fecha: (s) => (s ? String(s).slice(0, 10) : '—'),
     esc: (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])),
     color: (name) => css().getPropertyValue(name).trim(),
-    dark: () => document.documentElement.dataset.theme === 'dark' ||
-      (document.documentElement.dataset.theme !== 'light' && matchMedia('(prefers-color-scheme: dark)').matches),
+    dark: () => true, /* interfaz oscura única */
+    reducir: () => matchMedia('(prefers-reduced-motion: reduce)').matches,
     el: (html) => { const t = document.createElement('template'); t.innerHTML = html.trim(); return t.content.firstElementChild; },
     $: (s) => document.querySelector(s),
 
@@ -38,13 +38,16 @@
     /* Chart.js con los colores del tema */
     chartDefaults() {
       if (!window.Chart) return;
-      Chart.defaults.font.family = 'Inter, system-ui, sans-serif';
+      Chart.defaults.font.family = 'Space Grotesk, system-ui, sans-serif';
       Chart.defaults.color = U.color('--muted');
       Chart.defaults.borderColor = U.color('--line');
-      Chart.defaults.plugins.legend.labels.boxWidth = 12;
+      Chart.defaults.plugins.legend.labels.boxWidth = 10;
+      Chart.defaults.plugins.legend.labels.font = { family: 'IBM Plex Mono, monospace', size: 11 };
+      Chart.defaults.elements.bar.borderRadius = 0;
       Chart.defaults.maintainAspectRatio = false;
     },
-    paleta: ['#0f6cbd', '#e0671b', '#2e8b57', '#8a5bb5', '#c0392b', '#2b8c99', '#b58a1f', '#6b7280'],
+    /* gris = heridos/base · blanco = referencia · rojo = fatalidad */
+    paleta: ['#8A8D96', '#F0F0F0', '#5A5D66', '#B9BBC2', '#E53945', '#8F202A', '#FF6B73', '#2B2D33'],
   };
   window.U = U;
 })();

@@ -3,17 +3,19 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="dark">
+<meta name="theme-color" content="#08090B">
 <title>Ruta Segura Medellín</title>
 <meta name="description" content="Siniestralidad vial de Medellín con datos abiertos de MEData, GeoMedellín, SIATA y datos.gov.co: diagnóstico, consulta de riesgo por ruta, cámaras y clima.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Inter:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Space+Grotesk:wght@400;500;700&display=swap">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
 <link rel="stylesheet" href="css/app.css">
 </head>
 <body>
 <header class="top">
   <div class="in">
-    <a class="brand" href="#inicio"><span class="logo">⬢</span>Ruta Segura Medellín</a>
+    <a class="brand" href="#inicio"><span class="logo" aria-hidden="true"></span>Ruta Segura Medellín</a>
     <nav class="tabs" aria-label="Módulos">
       <a href="#inicio">Inicio</a>
       <a href="#diagnostico">1 · ¿Qué está pasando?</a>
@@ -30,17 +32,22 @@
   <section class="view" id="v-inicio">
     <div class="hero">
       <div class="head">
-        <h1>¿Qué tan riesgosa es tu ruta por Medellín?</h1>
-        <p class="lede">Unimos <b>11 años</b> de siniestros viales de <b>MEData</b> y <b>GeoMedellín</b> con las cámaras de
-          tránsito y la lluvia registrada por <b>IDEAM/SIATA</b>. Mira qué está pasando en la ciudad, consulta el riesgo de
-          tu recorrido y descubre dónde hace falta vigilancia.</p>
+        <p class="note muted">Medellín, Colombia · siniestralidad vial</p>
+        <h1>Detrás de cada cifra hay alguien que no volvió a casa.</h1>
+        <div class="hero-n"><b id="hero-n">0</b><span>personas fallecidas en las vías, <span id="hero-d"></span> (SISC)</span></div>
+        <p class="lede" id="hero-s"></p>
+        <p class="lede">Cruzamos <b>11 años</b> de datos abiertos de <b>MEData</b>, <b>GeoMedellín</b>, <b>IDEAM</b> y <b>SIATA</b> para ver dónde, cuándo y a quién le ocurre, y cuánto riesgo tiene tu ruta.</p>
         <div class="cta">
-          <a class="btn primary" href="#ruta">Consultar una ruta →</a>
+          <a class="btn primary" href="#ruta">Consultar una ruta</a>
           <a class="btn" href="#diagnostico">Ver el diagnóstico</a>
         </div>
       </div>
-      <div class="card" id="hallazgos-inicio"></div>
+      <div class="vidas" role="img" aria-label="Un punto por cada persona fallecida en las vías de Medellín">
+        <div id="hero-dots"></div>
+        <p class="note" id="hero-dots-leg"></p>
+      </div>
     </div>
+    <div class="hallazgos" id="hallazgos-inicio"></div>
     <div class="mods">
       <a class="mod" href="#diagnostico"><div class="card"><span class="n">MÓDULO 1</span><h3>¿Qué está pasando?</h3>
         <p class="muted small">Evolución, horas y días críticos, factores influyentes, actores viales y comunas.</p></div></a>
@@ -51,6 +58,8 @@
       <a class="mod" href="#datos"><div class="card"><span class="n">MÓDULO 4</span><h3>Datos y calidad</h3>
         <p class="muted small">Fuentes, reglas de limpieza, cuarentena y propuesta de mejora a MEData.</p></div></a>
     </div>
+    <div class="card cierre"><h3>Cada decisión en la vía tiene consecuencias</h3>
+      <p class="muted">Una cámara, un límite de velocidad, una hora de salida o un casco abrochado cambian el resultado de un segundo. Los datos de esta página son personas: consultar el riesgo de tu ruta es una forma de cuidarlas.</p></div>
   </section>
 
   <!-- =============================================================== MÓDULO 1 -->
@@ -66,7 +75,7 @@
         <p class="note" id="d-serie-nota"></p>
         <div class="chart tall"><canvas id="ch-serie"></canvas></div></div>
       <div class="card"><h3>¿A qué hora y qué día?</h3>
-        <p class="note">Siniestros con heridos o muertos por hora y día de la semana. Más oscuro = más siniestros.</p>
+        <p class="note">Siniestros con heridos o muertos por hora y día de la semana. Más rojo = más siniestros.</p>
         <div class="heat" id="d-heat"></div>
         <div class="legend"><span>Menos</span><span id="d-heat-leg" style="display:flex;gap:2px"></span><span>Más</span></div></div>
     </div>
@@ -84,10 +93,10 @@
     </div>
     <div class="grid two">
       <div class="card"><h3>Puntos críticos</h3>
-        <p class="note">Celdas de ~110 m con 15 o más siniestros con heridos o muertos (2014-2025). El tamaño indica el número de siniestros. En azul, las cámaras CCTV.</p>
+        <p class="note">Celdas de ~110 m con 15 o más siniestros con heridos o muertos (2014-2025). El tamaño indica el número de siniestros. En gris, las cámaras CCTV.</p>
         <div class="map" id="map-diag"></div></div>
       <div class="card"><h3>Comunas</h3>
-        <p class="note">Ubicadas con el polígono oficial. En rojo, las comunas sin ninguna cámara CCTV.</p>
+        <p class="note">Ubicadas con el polígono oficial. Resaltadas en rojo, las comunas sin ninguna cámara CCTV.</p>
         <div class="tbl"><table id="t-comunas"></table></div></div>
     </div>
   </section>

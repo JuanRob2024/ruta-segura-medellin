@@ -11,12 +11,12 @@
 
     mapa = U.mapa('map-int', { scroll: true });
     for (const c of RSM.camaras.filter((c) => c.tipo === 'CCTV')) {
-      L.circle([c.lat, c.lon], { radius: 300, color: '#0f6cbd', weight: 1, fillOpacity: .06 }).bindTooltip(`CCTV · ${U.esc(c.nombre)}`).addTo(mapa);
+      L.circle([c.lat, c.lon], { radius: 300, color: '#8A8D96', weight: 1, fillOpacity: .05 }).bindTooltip(`CCTV · ${U.esc(c.nombre)}`).addTo(mapa);
     }
     const max = I.puntos[0]?.puntaje || 1;
     I.puntos.forEach((p, k) => {
       L.marker([p.lat, p.lon], {
-        icon: L.divIcon({ className: '', html: `<div style="background:#c0392b;color:#fff;border-radius:50%;width:${22 + 10 * p.puntaje / max}px;height:${22 + 10 * p.puntaje / max}px;display:grid;place-items:center;font:700 12px Inter;border:2px solid #fff;box-shadow:0 1px 3px rgba(0,0,0,.4)">${k + 1}</div>`, iconSize: [30, 30], iconAnchor: [15, 15] }),
+        icon: L.divIcon({ className: '', html: `<div style="background:#E53945;color:#08090B;border-radius:0;;width:${22 + 10 * p.puntaje / max}px;height:${22 + 10 * p.puntaje / max}px;display:grid;place-items:center;font:700 12px 'IBM Plex Mono',monospace;border:1px solid #F0F0F0">${k + 1}</div>`, iconSize: [30, 30], iconAnchor: [15, 15] }),
       }).bindTooltip(`<b>${k + 1}. ${U.esc(p.dir || '')}</b><br>${U.esc(p.comuna || '')}<br>${U.n0(p.con_heridos)} siniestros con heridos · ${U.n0(p.muertes)} muertes<br>CCTV más cercana: ${U.n0(p.dist_cctv)} m`).addTo(mapa);
     });
     if (I.puntos.length) mapa.fitBounds(I.puntos.map((p) => [p.lat, p.lon]), { padding: [30, 30] });
@@ -30,7 +30,7 @@
     const sc = I.comunas_sin_cctv;
     new Chart(U.$('#ch-sincctv'), {
       type: 'bar',
-      data: { labels: sc.map((r) => r.comuna), datasets: [{ label: 'Siniestros con heridos 2019-2025', data: sc.map((r) => r.siniestros), backgroundColor: '#c0392b' }] },
+      data: { labels: sc.map((r) => r.comuna), datasets: [{ label: 'Siniestros con heridos 2019-2025', data: sc.map((r) => r.siniestros), backgroundColor: '#E53945' }] },
       options: { indexAxis: 'y', plugins: { legend: { display: false }, tooltip: { callbacks: { label: (c) => U.n0(c.raw) + ' siniestros' } } } },
     });
   }
