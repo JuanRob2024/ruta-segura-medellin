@@ -38,7 +38,7 @@
     const fall = M.fuentes_fallidas || [];
     U.$('#d-estado-nota').innerHTML = `Última extracción: ${U.esc(String(M.ultima_extraccion || '').replace('T', ' ').slice(0, 16))} UTC. ` +
       (fall.length ? `<b>${fall.length} fuente(s) no se actualizaron</b>; la página usa su última copia buena, sin datos a medias.`
-        : 'Todas las fuentes respondieron bien.') + ' Las fuentes marcadas usan su última copia buena. Antes de cada extracción se guarda una copia comprimida de los datos crudos.';
+        : 'Todas las fuentes respondieron bien.') + ' Antes de cada extracción se guarda una copia comprimida de los datos crudos.';
     U.$('#t-estado').innerHTML = `<thead><tr><th>Fuente</th><th>Estado</th><th>Última descarga buena</th><th>Detalle</th></tr></thead><tbody>${
       claves.sort().map((k) => { const e = E[k], [ic, txt] = ESTADO[e.estado] || ['circle-question', e.estado];
         return `<tr class="${fall.includes(k) ? 'hi' : ''}"><td>${U.esc(NOMBRE(k))}</td><td class="est-${e.estado}">${U.ico(ic)} ${txt}</td>
