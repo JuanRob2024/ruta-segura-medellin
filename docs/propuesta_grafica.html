@@ -82,7 +82,7 @@
     <p class="lede">Doce elementos para que la página sea más amable sin perder el tono editorial actual (negro, gris, rojo solo para la
       fatalidad, formas cuadradas). Cada uno está funcionando abajo: pasa el cursor o haz clic. Todos respetan la opción del sistema
       «reducir movimiento».</p>
-    <div class="meta-demo"><span class="hecho">Ya en la página</span><span class="alta">Prioridad alta</span><span>Prioridad media</span></div>
+    <div class="meta-demo"><span class="hecho">Estado al 9-nov-2026: los 12 elementos están implementados en la página pública y en la del jurado</span></div>
   </div>
 
   <div class="demo-grid">
@@ -95,7 +95,7 @@
         <rect x="181" y="36" width="8" height="8" fill="#F0F0F0"/></svg></div>
       <p class="note">El cuadrado rojo del logo actual gira 45° como señal de tránsito y traza una vía hasta el destino. Se activa al pasar
         el cursor por la marca y mientras se calcula una ruta (estado de carga con identidad propia).</p>
-      <div class="meta-demo"><span class="alta">Alta</span><span>Encabezado · Módulo 2</span><span>~2 h</span></div></div>
+      <div class="meta-demo"><span class="hecho">Implementado</span><span>Encabezado · Módulo 2</span><span>~2 h</span></div></div>
     <!-- 2 -->
     <div class="card"><h3>2 · La ruta se dibuja y un punto la recorre</h3>
       <div class="stage"><svg viewBox="0 0 300 120" width="100%"><path id="r2" d="M10 100 L60 90 L80 50 L150 40 L190 70 L250 60 L290 20" fill="none" stroke="#5A5D66" stroke-width="2"/>
@@ -105,7 +105,7 @@
       <button class="btn sm" id="b2">Calcular de nuevo</button>
       <p class="note">Al calcular, la ruta elegida se traza de origen a destino y los tramos críticos aparecen en el orden del recorrido. Hace
         visible que el riesgo se calcula sobre <i>esa</i> vía.</p>
-      <div class="meta-demo"><span class="alta">Alta</span><span>Módulo 2 (Leaflet + CSS)</span><span>~3 h</span></div></div>
+      <div class="meta-demo"><span class="hecho">Implementado</span><span>Módulo 2 (Leaflet + CSS)</span><span>~3 h</span></div></div>
     <!-- 3 -->
     <div class="card"><h3>3 · Medidor de riesgo por niveles</h3>
       <div class="stage"><div class="gauge"><div class="seg4" id="g4"><i></i><i></i><i></i><i></i></div>
@@ -114,7 +114,7 @@
         <button class="btn sm" data-g="2">Alto</button><button class="btn sm" data-g="3">Muy alto</button></div>
       <p class="note">Reemplaza la etiqueta plana del nivel por una barra de 4 segmentos que se llena y una aguja que se desliza, con el
         número contando hasta la probabilidad. Se entiende sin leer.</p>
-      <div class="meta-demo"><span class="alta">Alta</span><span>Módulo 2</span><span>~2 h</span></div></div>
+      <div class="meta-demo"><span class="hecho">Implementado</span><span>Módulo 2</span><span>~2 h</span></div></div>
     <!-- 4 -->
     <div class="card"><h3>4 · Pictograma «1.000 personas»</h3>
       <div class="stage"><div class="picto" style="width:100%"></div></div>
@@ -135,20 +135,20 @@
       <button class="btn sm" id="b6">Repetir</button>
       <p class="note">La portada ya cuenta las muertes. Proponemos usar el mismo gesto (contar al entrar en pantalla) en las cifras grandes de
         los módulos y en la tendencia del módulo 1, cuya línea ya se dibuja.</p>
-      <div class="meta-demo"><span class="hecho">Parcial</span><span>Todos los módulos</span><span>~1 h</span></div></div>
+      <div class="meta-demo"><span class="hecho">Implementado</span><span>Todos los módulos</span><span>~1 h</span></div></div>
     <!-- 7 -->
     <div class="card"><h3>7 · Clima vivo en la tarjeta</h3>
       <div class="stage"><div class="clima-demo" id="clima"></div></div>
       <div class="meta-demo" style="gap:4px"><button class="btn sm" id="b7l">Llueve (SIATA)</button><button class="btn sm" id="b7s">Sin lluvia</button></div>
       <p class="note">Si SIATA reporta lluvia cerca de la ruta, caen gotas finas sobre la tarjeta del clima; si no, un sol lineal o una luna
         de noche. Refuerza la recomendación sin agregar texto.</p>
-      <div class="meta-demo"><span>Media</span><span>Módulo 2</span><span>~1,5 h</span></div></div>
+      <div class="meta-demo"><span class="hecho">Implementado</span><span>Módulo 2</span><span>~1,5 h</span></div></div>
     <!-- 8 -->
     <div class="card"><h3>8 · Pulso en los puntos críticos</h3>
       <div class="stage"><div style="display:flex;gap:46px"><div class="pulso"></div><div class="pulso" style="animation-delay:.6s"></div></div></div>
       <p class="note">Los 3 tramos más siniestrados de la ruta y el top 3 de «dónde intervenir» laten en el mapa. Guía la mirada hacia lo
         importante entre cientos de marcadores.</p>
-      <div class="meta-demo"><span>Media</span><span>Mapas de los módulos 2 y 3</span><span>~1 h</span></div></div>
+      <div class="meta-demo"><span class="hecho">Implementado</span><span>Mapas de los módulos 2 y 3</span><span>~1 h</span></div></div>
     <!-- 9 -->
     <div class="card"><h3>9 · Íconos lineales de medio de transporte</h3>
       <div class="stage"><div class="medios" id="medios">
@@ -158,30 +158,31 @@
         <button><svg viewBox="0 0 40 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="20" cy="4" r="2.5"/><path d="M20 8v7l-4 7M20 15l4 7M14 12l6-4 6 4"/></svg>A pie</button></div></div>
       <p class="note">Mismos botones segmentados de hoy, con un ícono de línea que se desplaza al pasar el cursor. Se entienden sin leer y
         unifican los módulos 1 y 2.</p>
-      <div class="meta-demo"><span class="alta">Alta</span><span>Módulos 1 y 2</span><span>~1 h</span></div></div>
+      <div class="meta-demo"><span class="hecho">Implementado</span><span>Módulos 1 y 2</span><span>~1 h</span></div></div>
     <!-- 10 -->
     <div class="card"><h3>10 · Entradas suaves al hacer scroll</h3>
       <div class="stage"><div id="rev" style="display:flex;gap:10px"></div></div>
       <button class="btn sm" id="b10">Repetir</button>
       <p class="note">Las tarjetas aparecen una tras otra al entrar en pantalla (ya en el módulo 1). Proponemos extenderlo a los módulos 2 a 4
         y a la portada, con el mismo ritmo.</p>
-      <div class="meta-demo"><span class="hecho">Implementado en el módulo 1</span><span>~30 min el resto</span></div></div>
+      <div class="meta-demo"><span class="hecho">Implementado</span><span>Todas las páginas</span></div></div>
     <!-- 11 -->
     <div class="card"><h3>11 · Esqueleto de carga «calculando ruta»</h3>
       <div class="stage"><div class="carga"><div class="camino"></div><div class="sk" style="width:70%"></div><div class="sk"></div><div class="sk" style="width:45%"></div></div></div>
       <p class="note">Mientras OSRM y SIATA responden, la tarjeta muestra líneas de carril que avanzan y bloques grises donde aparecerán los
         resultados. Evita la sensación de página congelada.</p>
-      <div class="meta-demo"><span>Media</span><span>Módulo 2</span><span>~1 h</span></div></div>
+      <div class="meta-demo"><span class="hecho">Implementado</span><span>Módulo 2</span><span>~1 h</span></div></div>
     <!-- 12 -->
     <div class="card"><h3>12 · Los puntos de la portada, año por año</h3>
       <div class="stage" style="display:flex;flex-direction:column;gap:10px;align-items:stretch">
         <div class="anios" id="anios"></div><div class="puntos-demo" id="pdemo"></div><p class="note" id="pnota"></p></div>
       <p class="note">Hoy cada punto de la portada es una persona fallecida. Al pasar por un año se encienden en rojo las de ese año: el visitante
         «lee» la serie sin un gráfico. Datos reales del SISC.</p>
-      <div class="meta-demo"><span class="alta">Alta</span><span>Portada</span><span>~1,5 h</span></div></div>
+      <div class="meta-demo"><span class="hecho">Implementado</span><span>Portada</span><span>~1,5 h</span></div></div>
   </div>
-  <p class="small muted">Recomendación de orden: 1, 3, 9 y 12 (identidad y comprensión inmediata), luego 2 y 11 (feedback en la consulta) y
-    al final 7, 8 y 6 (ambiente). Todo con CSS y SVG, sin librerías nuevas.</p>
+  <p class="small muted">Dónde verlos: logo (1) en el encabezado; ruta, medidor, clima, pulso y esqueleto de carga (2, 3, 7, 8, 11) en el capítulo 2;
+    pictograma, reloj, contadores e íconos (4, 5, 6, 9) en el capítulo 1; años de la portada (12) en la introducción; entradas suaves (10) en todos los capítulos.
+    Íconos de Font Awesome; el resto, CSS y SVG.</p>
 </main>
 <script src="../web/data/diagnostico.js"></script>
 <script src="../web/js/util.js"></script>

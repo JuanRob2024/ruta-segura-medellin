@@ -242,3 +242,98 @@ footer a { color: var(--muted); }
 .reveal { opacity: 0; transform: translateY(14px); transition: opacity .6s ease, transform .6s ease; }
 .reveal.in { opacity: 1; transform: none; }
 @media (prefers-reduced-motion: reduce) { .reveal { opacity: 1; transform: none; } .picto i.m, .reloj .hb, .semana span, .lluvia-mes span, .cmp, .t-spark .trazo { animation: none; stroke-dashoffset: 0; } }
+
+/* ===================================================== narrativa tipo informe */
+.kicker { font: 600 12.5px var(--font); letter-spacing: .08em; text-transform: uppercase; color: var(--accent); }
+.progreso { height: 2px; background: transparent; }
+.progreso span { display: block; height: 100%; width: 0; background: var(--accent); transition: width .1s linear; }
+.pregunta { border: 1px solid var(--line); border-left: 3px solid var(--accent); background: var(--panel); padding: 18px 20px; display: flex; flex-direction: column; gap: 6px; }
+.pregunta p { font: 500 clamp(17px, 2vw, 21px)/1.45 var(--font-head); max-width: 70ch; }
+.sigue { display: flex; flex-direction: column; gap: 6px; text-decoration: none; color: var(--fg); border: 1px solid var(--line); border-top: 2px solid var(--accent);
+  background: var(--panel); padding: 18px 20px; margin-top: 8px; transition: border-color .2s, background .2s; }
+.sigue b { font: 600 18px/1.4 var(--font-head); }
+.sigue b i { color: var(--accent); margin-left: 6px; transition: transform .2s; }
+.sigue:hover { background: var(--soft); }
+.sigue:hover b i { transform: translateX(4px); }
+.conclusiones ol { margin: 0; padding-left: 22px; display: flex; flex-direction: column; gap: 10px; font-size: 15.5px; line-height: 1.55; }
+.conclusiones li::marker { color: var(--accent); font-weight: 700; }
+.perfil-comuna { grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); margin-top: 10px; }
+
+/* íconos (Font Awesome) en listas y botones */
+.recs li .ri { color: var(--muted); font-size: 16px; text-align: center; line-height: 1.5; }
+.recs li .num-ri { color: var(--accent); font: 700 16px var(--font-head); }
+.seg-ico button { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 9px 4px; }
+.seg-ico button i { font-size: 17px; transition: transform .25s; }
+.seg-ico button:hover i { transform: translateX(3px); }
+.wx .box b i { font-size: .8em; margin-right: 4px; color: var(--muted); }
+
+/* 1 · logo interactivo: el cuadro gira como señal y traza la vía (al pasar el cursor o mientras se calcula una ruta) */
+.logo-ruta { display: block; overflow: visible; }
+.logo-ruta .via { stroke-dasharray: 48; stroke-dashoffset: 48; transition: stroke-dashoffset .8s ease; }
+.logo-ruta .meta-ruta { opacity: 0; transition: opacity .3s .5s; }
+.logo-ruta .cuadro { transform-box: fill-box; transform-origin: center; transition: transform .5s ease; }
+.brand:hover .via, body.calculando .via { stroke-dashoffset: 0; }
+.brand:hover .meta-ruta, body.calculando .meta-ruta { opacity: 1; }
+.brand:hover .cuadro, body.calculando .cuadro { transform: rotate(45deg) scale(.8); }
+body.calculando .via { animation: via-carga 1.2s ease-in-out infinite; }
+@keyframes via-carga { 0% { stroke-dashoffset: 48; } 60%, 100% { stroke-dashoffset: 0; } }
+
+/* 12 · años de la portada */
+.anios-dots { display: flex; gap: 4px; flex-wrap: wrap; }
+.chip { border: 1px solid var(--line); background: transparent; color: var(--muted); font: 500 12.5px var(--font); padding: 3px 8px; cursor: pointer; }
+.chip:hover, .chip.on { color: var(--fg); border-color: var(--accent); }
+#hero-dots i { transition: opacity .3s, background .3s; }
+#hero-dots.filtro i { opacity: .12; }
+#hero-dots.filtro i.on { opacity: 1; background: var(--accent); }
+
+/* 3 · medidor de riesgo */
+.medidor { display: flex; flex-direction: column; gap: 4px; }
+.medidor .seg4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 3px; height: 12px; }
+.medidor .seg4 i { background: #2B2D33; transition: background .4s; }
+.medidor .seg4 i.on1 { background: var(--lvl-bajo); } .medidor .seg4 i.on2 { background: var(--lvl-medio); }
+.medidor .seg4 i.on3 { background: var(--lvl-alto); } .medidor .seg4 i.on4 { background: var(--lvl-muyalto); }
+.medidor .seg4-et { display: grid; grid-template-columns: repeat(4, 1fr); font-size: 11.5px; color: var(--muted); }
+.medidor .aguja { position: relative; height: 8px; }
+.medidor .aguja b { position: absolute; top: -26px; width: 2px; height: 20px; background: var(--fg); left: 0; transition: left 1s cubic-bezier(.2, .8, .2, 1); }
+
+/* 7 · clima vivo */
+.wx .box { position: relative; overflow: hidden; }
+.gota { position: absolute; top: -12px; width: 1.5px; height: 11px; background: #B9BBC2; opacity: .55; animation: caer linear infinite; pointer-events: none; }
+@keyframes caer { to { transform: translateY(160px); } }
+.wx .box.despejado b i { animation: girar 14s linear infinite; display: inline-block; }
+@keyframes girar { to { transform: rotate(360deg); } }
+
+/* 8 · pulso en puntos críticos */
+.pulso { width: 14px; height: 14px; position: relative; pointer-events: none; }
+.pulso::after { content: ""; position: absolute; inset: 0; border: 2px solid var(--accent); animation: onda 1.8s ease-out infinite; }
+.pulso.grande { width: 20px; height: 20px; }
+@keyframes onda { from { transform: scale(1); opacity: 1; } to { transform: scale(3); opacity: 0; } }
+
+/* 11 · esqueleto de carga */
+.carga-ruta { display: flex; flex-direction: column; gap: 14px; }
+.carga-ruta .camino { height: 4px; background: repeating-linear-gradient(90deg, var(--fg) 0 22px, transparent 22px 40px); animation: avanzar .8s linear infinite; opacity: .7; }
+@keyframes avanzar { to { background-position: 40px 0; } }
+.sk-card { border: 1px solid var(--line); background: var(--panel); padding: 20px; display: flex; flex-direction: column; gap: 12px; }
+.sk { height: 14px; background: linear-gradient(90deg, #191B20, #2B2D33, #191B20); background-size: 200% 100%; animation: brillo 1.4s infinite; }
+.sk.w70 { width: 70%; } .sk.w45 { width: 45%; }
+@keyframes brillo { to { background-position: -200% 0; } }
+
+/* cámaras: no disponible / sin imagen pública */
+.cam-vis { display: block; }
+.cam-off, .cam-tipo { aspect-ratio: 16/9; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; text-align: center; padding: 10px; }
+.cam-off { background: repeating-linear-gradient(135deg, #101114 0 10px, #15161a 10px 20px); border-bottom: 1px solid var(--line); }
+.cam-off i { font-size: 26px; color: var(--accent); }
+.cam-off b { font: 700 14px var(--font); letter-spacing: .06em; text-transform: uppercase; }
+.cam-off span { font-size: 12.5px; color: var(--muted); }
+.cam-tipo { background: var(--soft); border-bottom: 1px solid var(--line); color: var(--muted); font-size: 12.5px; }
+.cam-tipo i { font-size: 24px; color: var(--fg); opacity: .8; }
+
+@media (prefers-reduced-motion: reduce) {
+  .gota, .pulso::after, .carga-ruta .camino, .sk, body.calculando .via, .wx .box.despejado b i { animation: none !important; }
+}
+.carga-ruta[hidden] { display: none; }
+/* encabezado en una sola línea con el logo y los capítulos */
+.top .in { gap: 14px; }
+.tabs a { padding: 7px 9px; font-size: 14.5px; }
+.top .meta { font-size: 12px; }
+.brand { gap: 8px; }

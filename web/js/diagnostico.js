@@ -55,6 +55,7 @@
       <p class="note">${yo.actor === 'Vehículo' ? 'Es la referencia más baja de la ciudad.'
         : `Eso es <b>${U.n1(yo.letalidad_x1000 / veh.letalidad_x1000)} veces</b> la gravedad para quien va en carro o bus.`}
       Los ${NOMBRE[yo.actor]} son el <b>${U.pct(yo.victimas / total, 0)}</b> de las víctimas viales (MEData 2014-2021).</p>`;
+    U.contar(U.$('#d-grave .g-big b'), m, (x) => U.n0(x), 700);
   }
 
   // ------------------------------------------------------------------ reloj de 24 horas
@@ -128,6 +129,7 @@
         <div><b class="${c.cctv ? '' : 'rojo'}">${c.cctv}</b><span>cámaras CCTV${c.cctv ? '' : ': ninguna'}</span></div></div>
       ${pts.length ? `<p class="note">Esquinas con más siniestros en ${U.esc(c.comuna)}:</p><ol class="c-pts">${pts.map((p) =>
         `<li><b>${U.esc(p.dir || 'Sin dirección')}</b> · ${U.n0(p.tot)} siniestros con heridos</li>`).join('')}</ol>` : ''}`;
+    U.contar(U.$('#d-comuna .c-rank b'), pos, (x) => '#' + U.n0(x), 600);
     pintarPuntos(c.comuna);
   }
 
@@ -165,29 +167,23 @@
   function tips() {
     const pic = factor('hora_pico', 'Hora pico'), mad = factor('franja', 'Madrugada');
     const T = {
-      Moto: [['🪖', 'Casco abrochado y luces encendidas siempre, también de día.'],
-        ['↔️', 'No zigzaguees entre carros: es donde ocurren los choques con motos en los corredores más siniestrados.'],
-        ['⏱️', `Si puedes, sal antes o después de la hora pico: hay ${U.n1(pic.rr)}× más siniestros por hora.`]],
-      'Vehículo': [['👀', `Revisa espejos y punto ciego antes de girar o cambiar de carril: el ${U.pct(D().kpis.pct_moto, 0)} de las víctimas iban en moto.`],
-        ['🚸', 'Cede el paso en las cebras: el peatón es quien más arriesga su vida en un siniestro.'],
-        ['📵', 'Nada de celular al volante, sobre todo en las esquinas críticas de tu ruta.']],
-      Bicicleta: [['💡', 'Luces delantera y trasera y ropa visible: la gravedad para un ciclista es varias veces la de un carro.'],
-        ['🛣️', 'Prefiere las ciclorrutas y evita los corredores con más siniestros de tu ruta.'],
-        ['🌙', `Evita la madrugada: es ${U.n1(mad.rr)} veces más letal que la tarde.`]],
-      'Peatón': [['🚦', 'Cruza solo por cebra, puente o semáforo, aunque tome más tiempo.'],
-        ['👂', 'Sin audífonos ni celular al cruzar: mira a ambos lados, también las motos.'],
-        ['🦺', `De noche usa algo claro o reflectivo: la madrugada es ${U.n1(mad.rr)}× más letal.`]],
+      Moto: [['helmet-safety', 'Casco abrochado y luces encendidas siempre, también de día.'],
+        ['arrows-left-right', 'No zigzaguees entre carros: es donde ocurren los choques con motos en los corredores más siniestrados.'],
+        ['clock', `Si puedes, sal antes o después de la hora pico: hay ${U.n1(pic.rr)}× más siniestros por hora.`]],
+      'Vehículo': [['eye', `Revisa espejos y punto ciego antes de girar o cambiar de carril: el ${U.pct(D().kpis.pct_moto, 0)} de las víctimas iban en moto.`],
+        ['person-walking', 'Cede el paso en las cebras: el peatón es quien más arriesga su vida en un siniestro.'],
+        ['mobile-screen', 'Nada de celular al volante, sobre todo en las esquinas críticas de tu ruta.']],
+      Bicicleta: [['lightbulb', 'Luces delantera y trasera y ropa visible: la gravedad para un ciclista es varias veces la de un carro.'],
+        ['road', 'Prefiere las ciclorrutas y evita los corredores con más siniestros de tu ruta.'],
+        ['moon', `Evita la madrugada: es ${U.n1(mad.rr)} veces más letal que la tarde.`]],
+      'Peatón': [['traffic-light', 'Cruza solo por cebra, puente o semáforo, aunque tome más tiempo.'],
+        ['ear-listen', 'Sin audífonos ni celular al cruzar: mira a ambos lados, también las motos.'],
+        ['vest', `De noche usa algo claro o reflectivo: la madrugada es ${U.n1(mad.rr)}× más letal.`]],
     };
-    U.$('#d-tips').replaceChildren(...T[st.medio].map(([i, t]) => U.el(`<li><span>${i}</span><span>${t}</span></li>`)));
+    U.$('#d-tips').replaceChildren(...U.lista(T[st.medio]));
   }
 
   // ------------------------------------------------------------------ interacción
-  function revelar() {
-    const els = document.querySelectorAll('#v-diagnostico .reveal');
-    if (U.reducir() || !('IntersectionObserver' in window)) { els.forEach((e) => e.classList.add('in')); return; }
-    const io = new IntersectionObserver((ents) => ents.forEach((e) => { if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); } }), { threshold: .15 });
-    els.forEach((e) => io.observe(e));
-  }
 
   function personal() { grave(); comuna(); tips(); }
 
@@ -213,7 +209,6 @@
         L.circleMarker([c.lat, c.lon], { radius: 3.5, color: '#F0F0F0', weight: 1, fillColor: '#5A5D66', fillOpacity: 1 }).bindTooltip(`CCTV · ${U.esc(c.nombre)}`).addTo(mapa);
       }
       tendencia(); reloj(); dias(); lluvia(); personal();
-      revelar();
     },
   };
 })();

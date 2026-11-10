@@ -18,6 +18,21 @@
     reducir: () => matchMedia('(prefers-reduced-motion: reduce)').matches,
     el: (html) => { const t = document.createElement('template'); t.innerHTML = html.trim(); return t.content.firstElementChild; },
     $: (s) => document.querySelector(s),
+    /* ícono de Font Awesome (solid) */
+    ico: (n) => `<i class="fa-solid fa-${n}" aria-hidden="true"></i>`,
+    /* cuenta animada hasta `meta` (respeta «reducir movimiento») */
+    contar(el, meta, fmt = (x) => U.n0(x), dur = 1200) {
+      if (!el || meta == null || isNaN(meta)) return;
+      if (U.reducir()) { el.textContent = fmt(meta); return; }
+      const t0 = performance.now();
+      (function paso(t) {
+        const p = Math.min(1, (t - t0) / dur);
+        el.textContent = fmt(meta * (1 - Math.pow(1 - p, 3)));
+        if (p < 1) requestAnimationFrame(paso);
+      })(t0);
+    },
+    /* lista de recomendaciones/hallazgos: [[ícono, html], …] → <li> */
+    lista: (items) => items.map(([i, t]) => U.el(`<li><span class="ri">${U.ico(i)}</span><span>${t}</span></li>`)),
 
     /* almacenamiento: puede fallar en modo privado → nunca rompe la página */
     get(k) { try { return JSON.parse(localStorage.getItem(k)); } catch (e) { return null; } },

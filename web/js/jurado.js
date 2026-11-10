@@ -45,7 +45,7 @@
       V.map(([t, dec, cal, f, tol, src]) => {
         const ok = tol == null ? dec === cal : Math.abs(dec - cal) <= tol;
         return `<tr><td>${t}</td><td class="n">${f(dec)}</td><td class="n"><b>${f(cal)}</b></td>
-          <td class="${ok ? 'ok-si' : 'ok-no'}">${ok ? '✓ coincide' : '≠ cambió la fuente'}</td><td class="small muted">${src}</td></tr>`;
+          <td class="${ok ? 'ok-si' : 'ok-no'}">${ok ? U.ico('circle-check') + ' coincide' : U.ico('circle-exclamation') + ' cambió la fuente'}</td><td class="small muted">${src}</td></tr>`;
       }).join('')}</tbody>`;
   }
 
@@ -75,6 +75,8 @@
       ['Muertes SISC', U.n0(k.muertes_sisc), `${k.sisc_desde}-${k.sisc_hasta}`], ['Letalidad', U.n1(k.letalidad_x1000), 'muertos por 1.000 víctimas'],
       ['Víctimas lejos de una CCTV', U.pct(k.pct_lejos_cctv), `mediana ${U.n0(k.mediana_m_cctv)} m`]];
     U.$('#e-kpis').replaceChildren(...items.map(([l, v, s]) => U.el(`<div class="kpi"><div class="l">${l}</div><div class="v">${v}</div><div class="s">${s}</div></div>`)));
+    const cuentas = [[k.siniestros_heridos, U.n0], [k.heridos_dia, U.n1], [k.victimas, U.n0], [k.muertes_sisc, U.n0], [k.letalidad_x1000, U.n1], [k.pct_lejos_cctv, (x) => U.pct(x)]];
+    document.querySelectorAll('#e-kpis .kpi .v').forEach((el, i) => U.contar(el, cuentas[i][0], cuentas[i][1]));
 
     const s = D.serie;
     U.$('#e-serie-nota').innerHTML = 'Barras: siniestros por gravedad; línea roja: muertes SISC. 2014 empieza en julio. <b>Desde 2023 GeoMedellín casi no publica «solo daños»</b>: por eso los análisis usan solo siniestros con heridos o muertos.';
@@ -162,11 +164,11 @@
     let timer = null;
     sl.addEventListener('input', () => pintar(+sl.value));
     U.$('#t-play').addEventListener('click', () => {
-      if (timer) { clearInterval(timer); timer = null; U.$('#t-play').textContent = '▶ Reproducir'; return; }
-      U.$('#t-play').textContent = '❚❚ Pausa';
+      if (timer) { clearInterval(timer); timer = null; U.$('#t-play').innerHTML = U.ico('play') + ' Reproducir'; return; }
+      U.$('#t-play').innerHTML = U.ico('pause') + ' Pausa';
       if (+sl.value >= A.length - 1) sl.value = 0;
       timer = setInterval(() => {
-        if (+sl.value >= A.length - 1) { clearInterval(timer); timer = null; U.$('#t-play').textContent = '▶ Reproducir'; return; }
+        if (+sl.value >= A.length - 1) { clearInterval(timer); timer = null; U.$('#t-play').innerHTML = U.ico('play') + ' Reproducir'; return; }
         sl.value = +sl.value + 1; pintar(+sl.value);
       }, U.reducir() ? 1800 : 1100);
       pintar(+sl.value);
@@ -306,18 +308,22 @@
 
   function limites() {
     const L_ = [
-      ['📏', 'La probabilidad de una ruta mide qué tan frecuentes son los siniestros en el corredor, no la probabilidad personal de accidentarse: no hay conteos de vehículos abiertos por vía (exposición).'],
-      ['📷', 'Cobertura = distancia en línea recta ≤ radio. No considera hacia dónde apunta la cámara ni los obstáculos. Cercanía a una cámara es asociación, no causalidad.'],
-      ['🗂️', 'Base comparable: solo siniestros con heridos o muertos, porque GeoMedellín dejó de publicar «solo daños» en 2023. Las víctimas por actor llegan a sep-2021.'],
-      ['🌧️', 'La lluvia histórica es una sola estación IDEAM (Olaya Herrera) con vacíos; solo se usan horas observadas. SIATA en vivo da el detalle espacial en la consulta de ruta.'],
-      ['🧮', 'Simulador A: las celdas se miden desde su centro; el algoritmo voraz da una buena solución, no necesariamente la óptima global.'],
+      ['ruler', 'La probabilidad de una ruta mide qué tan frecuentes son los siniestros en el corredor, no la probabilidad personal de accidentarse: no hay conteos de vehículos abiertos por vía (exposición).'],
+      ['video', 'Cobertura = distancia en línea recta ≤ radio. No considera hacia dónde apunta la cámara ni los obstáculos. Cercanía a una cámara es asociación, no causalidad.'],
+      ['folder-open', 'Base comparable: solo siniestros con heridos o muertos, porque GeoMedellín dejó de publicar «solo daños» en 2023. Las víctimas por actor llegan a sep-2021.'],
+      ['cloud-rain', 'La lluvia histórica es una sola estación IDEAM (Olaya Herrera) con vacíos; solo se usan horas observadas. SIATA en vivo da el detalle espacial en la consulta de ruta.'],
+      ['calculator', 'Simulador A: las celdas se miden desde su centro; el algoritmo voraz da una buena solución, no necesariamente la óptima global.'],
     ];
-    U.$('#j-limites').replaceChildren(...L_.map(([i, t]) => U.el(`<li><span>${i}</span><span>${t}</span></li>`)));
+    U.$('#j-limites').replaceChildren(...U.lista(L_));
   }
 
   document.addEventListener('DOMContentLoaded', () => {
     U.chartDefaults();
     const pasos = [resumen, validacion, calidad, estadistica, tiempo, simA, simB, simC, limites];
     for (const f of pasos) { try { f(); } catch (e) { console.error(f.name, e); } }
+    const rev = document.querySelectorAll('.reveal');
+    if (U.reducir() || !('IntersectionObserver' in window)) rev.forEach((e) => e.classList.add('in'));
+    else { const io = new IntersectionObserver((es) => es.forEach((e) => { if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); } }), { threshold: .05 });
+      rev.forEach((e) => io.observe(e)); }
   });
 })();

@@ -36,21 +36,27 @@
     const cal = Object.fromEntries(RSM.calidad.fuentes.map((f) => [f.id, Object.fromEntries(f.reglas.map((r) => [r.regla, r.n]))]));
     const g = (ds, r) => (cal[ds] || {})[r];
     const hall = [
-      ['📄', `<b>Víctimas en incidentes viales</b> trae ${U.n0(g('victimas', 'Filas vacías eliminadas'))} filas vacías (el 77 % del archivo): está rellenado hasta el límite de Excel.`],
-      ['📅', '<b>Víctimas</b> declara actualización mensual, pero llega solo a sept-2021; <b>Incidentes viales</b>, a ago-2020.'],
-      ['📍', `<b>Incidentes viales</b> usa la coordenada comodín [-75,7037; 6,2214] en ${U.n0(g('incidentes', 'Coordenada comodín anulada'))} registros. En GeoMedellín encontramos además ${U.n0(g('siniestralidad', 'Comodín detectado (punto repetido con direcciones dispersas)'))} siniestros en puntos repetidos que reciben direcciones de toda la ciudad (comodines no declarados).`],
-      ['🔤', `Textos con escapes hexadecimales («Solo da\\xF1os») en ${U.n0(g('incidentes', 'Texto con escapes \\xNN reparado'))} filas y el año con «\\r» pegado.`],
-      ['🌧️', '<b>Lesión fatal … con precipitación</b>: la columna <code>precipitacion</code> está 100 % vacía en las 1.047 filas.'],
-      ['🗂️', 'GeoMedellín dejó de publicar los siniestros «solo daños» desde 2023 (de ~14 mil a ~90 por año) sin advertirlo.'],
+      ['file-lines', `<b>Víctimas en incidentes viales</b> trae ${U.n0(g('victimas', 'Filas vacías eliminadas'))} filas vacías (el 77 % del archivo): está rellenado hasta el límite de Excel.`],
+      ['calendar-days', '<b>Víctimas</b> declara actualización mensual, pero llega solo a sept-2021; <b>Incidentes viales</b>, a ago-2020.'],
+      ['location-dot', `<b>Incidentes viales</b> usa la coordenada comodín [-75,7037; 6,2214] en ${U.n0(g('incidentes', 'Coordenada comodín anulada'))} registros. En GeoMedellín encontramos además ${U.n0(g('siniestralidad', 'Comodín detectado (punto repetido con direcciones dispersas)'))} siniestros en puntos repetidos que reciben direcciones de toda la ciudad (comodines no declarados).`],
+      ['font', `Textos con escapes hexadecimales («Solo da\\xF1os») en ${U.n0(g('incidentes', 'Texto con escapes \\xNN reparado'))} filas y el año con «\\r» pegado.`],
+      ['cloud-rain', '<b>Lesión fatal … con precipitación</b>: la columna <code>precipitacion</code> está 100 % vacía en las 1.047 filas.'],
+      ['folder-open', 'GeoMedellín dejó de publicar los siniestros «solo daños» desde 2023 (de ~14 mil a ~90 por año) sin advertirlo.'],
     ];
-    U.$('#d-hall').replaceChildren(...hall.map(([i, t]) => U.el(`<li><span>${i}</span><span>${t}</span></li>`)));
+    U.$('#d-hall').replaceChildren(...U.lista(hall));
     const prop = [
       ['1', 'Actualizar <b>Víctimas</b> e <b>Incidentes viales</b> desde oct-2021 con la periodicidad mensual que declara la ficha, sin filas vacías, en UTF-8 y con coordenada nula en vez de comodín.'],
       ['2', 'Agregar <code>COD_COMUNA</code> y <code>NRO_RADICADO</code> en ambos conjuntos para unirlos sin heurísticas.'],
       ['3', 'Llenar la columna <code>precipitacion</code> del conjunto SISC con la estación SIATA más cercana, o retirarla de la ficha.'],
       ['4', 'Abrir un conjunto <b>Cámaras de tránsito</b> con <code>ID_CAMARA, TIPO, LATITUD, LONGITUD, FECHA_INSTALACION</code>: permitiría medir si la siniestralidad baja alrededor de una cámara después de instalarla.'],
     ];
-    U.$('#d-prop').replaceChildren(...prop.map(([i, t]) => U.el(`<li><span><b>${i}</b></span><span>${t}</span></li>`)));
+    U.$('#d-prop').replaceChildren(...prop.map(([i, t]) => U.el(`<li><span class="ri num-ri">${i}</span><span>${t}</span></li>`)));
+    U.$('#d-lim').replaceChildren(...U.lista([
+      ['ruler', 'La probabilidad de una ruta mide qué tan frecuentes son los siniestros en el corredor, no la probabilidad personal de accidentarse: no hay conteos de vehículos abiertos por vía.'],
+      ['video', 'Estar cerca de una cámara es una asociación, no una causa: sin la fecha de instalación de cada cámara no se puede medir su efecto.'],
+      ['folder-open', 'Los análisis usan solo siniestros con heridos o muertos, porque GeoMedellín dejó de publicar los de «solo daños» en 2023. Las víctimas por actor vial llegan a sept-2021.'],
+      ['cloud-rain', 'La lluvia histórica viene de una sola estación del IDEAM con vacíos; SIATA en vivo aporta el detalle de cada ruta.'],
+    ]));
   }
 
   let listo = false;

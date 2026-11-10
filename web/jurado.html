@@ -10,13 +10,19 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;700&display=swap">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 <link rel="stylesheet" href="css/app.css">
 <link rel="stylesheet" href="css/jurado.css">
 </head>
 <body>
 <header class="top">
   <div class="in">
-    <a class="brand" href="index.html"><span class="logo" aria-hidden="true"></span>Ruta Segura Medellín</a>
+    <a class="brand" href="index.html" aria-label="Ruta Segura Medellín, página pública">
+      <svg class="logo-ruta" viewBox="0 0 46 18" width="46" height="18" aria-hidden="true">
+        <path class="via" d="M6 12 C 14 12, 16 4, 24 5 S 36 14, 42 6" fill="none" stroke="#F0F0F0" stroke-width="1.6"/>
+        <rect class="cuadro" x="1" y="7" width="10" height="10" fill="#E53945"/>
+        <rect class="meta-ruta" x="39" y="3" width="5" height="5" fill="#F0F0F0"/>
+      </svg>Ruta Segura Medellín</a>
     <nav class="tabs" aria-label="Secciones">
       <a href="#resumen">Resumen</a><a href="#validacion">Validación</a><a href="#calidad">Calidad</a>
       <a href="#estadistica">Estadística</a><a href="#tiempo">En el tiempo</a><a href="#simulaciones">Simulaciones</a>
@@ -54,7 +60,7 @@ pytest -q                      # 20 pruebas</code></pre>
   </section>
 
   <!-- ============================================================ VALIDACIÓN -->
-  <section id="validacion" class="bloque">
+  <section id="validacion" class="bloque reveal">
     <div class="head"><h2>Validación de las cifras declaradas</h2>
       <p class="muted">Cada cifra de <code>guia_entrega.pdf</code> e <code>instrucciones.txt</code>, comparada en vivo con los datos que acaba de
         generar el pipeline. Si alguien vuelve a ejecutar el ETL y una fuente cambió, aquí se ve la diferencia.</p></div>
@@ -62,7 +68,7 @@ pytest -q                      # 20 pruebas</code></pre>
   </section>
 
   <!-- ============================================================ CALIDAD -->
-  <section id="calidad" class="bloque">
+  <section id="calidad" class="bloque reveal">
     <div class="head"><h2>Calidad de los datos</h2>
       <p class="muted">Cuántas filas entran y cuántas quedan limpias por fuente, y qué regla tocó cuántas. Nada se borra en silencio: lo
         descartado va a cuarentena con su motivo.</p></div>
@@ -110,7 +116,7 @@ pytest -q                      # 20 pruebas</code></pre>
         siniestros con heridos entre 2014 y 2025.</p></div>
     <div class="grid two">
       <div class="card" style="padding:10px">
-        <div class="anim-ctrl"><button class="btn" id="t-play">▶ Reproducir</button>
+        <div class="anim-ctrl"><button class="btn" id="t-play"><i class="fa-solid fa-play" aria-hidden="true"></i> Reproducir</button>
           <input type="range" id="t-anio" min="0" max="11" value="0" aria-label="Año"><b class="anio-big" id="t-label">2014</b></div>
         <div class="map big" id="map-tiempo"></div></div>
       <div class="card"><h3 id="t-tit">Los más siniestrados del año</h3>

@@ -9,7 +9,7 @@
  */
 (function () {
   const BBOX = '-75.72,6.10,-75.45,6.40'; // lon_min,lat_min,lon_max,lat_max (Valle de Aburrá)
-  const COLORES = { 'Bajo': '#2e8b57', 'Medio': '#d4a017', 'Alto': '#e0671b', 'Muy alto': '#c0392b' };
+  const COLORES = { 'Bajo': '#5A5D66', 'Medio': '#B9BBC2', 'Alto': '#FF6B73', 'Muy alto': '#E53945' }; // mismos tonos que el medidor
   const VEL = { bici: 15, pie: 4.5 }; // km/h cuando no se usa la duración del carro
   const st = { o: null, d: null, medio: 'carro', pick: null, alts: [], sel: 0, capas: [], ultimaRuta: 0, siata: null };
   let mapa;
@@ -109,6 +109,8 @@
     if (!st.o || !st.d) { estado('Elige el origen y el destino (de la lista de sugerencias o marcándolos en el mapa).', true); return; }
     b.disabled = true;
     estado('Calculando rutas…');
+    U.$('#r-carga').hidden = false; U.$('#r-result').hidden = true;
+    document.body.classList.add('calculando');
     try {
       const [rutas, sia] = await Promise.all([pedirRuta(st.o, st.d), siata()]);
       const fecha = new Date(U.$('#f-hora').value || Date.now());
@@ -128,6 +130,8 @@
       estado(e.message, true);
     } finally {
       b.disabled = false;
+      U.$('#r-carga').hidden = true;
+      document.body.classList.remove('calculando');
     }
   }
 
@@ -150,9 +154,35 @@
     const a = st.alts[i];
     const linea = L.polyline(a.coords.map(([lo, la]) => [la, lo]), { color: COLORES[a.ev.nivel], weight: 7, opacity: .95 }).addTo(mapa);
     st.capas.push(linea);
-    mapa.fitBounds(linea.getBounds(), { padding: [30, 30] });
+    mapa.fitBounds(linea.getBounds(), { padding: [30, 30], animate: false });
+    animarRuta(linea, a.coords);
     listaAlternativas();
     resultado(a);
+  }
+
+  /* la ruta se traza de origen a destino y un punto la recorre una vez */
+  function animarRuta(linea, coords) {
+    const el = linea.getElement && linea.getElement();
+    if (!el || U.reducir()) return;
+    const len = el.getTotalLength();
+    el.style.transition = 'none'; el.style.strokeDasharray = len; el.style.strokeDashoffset = len;
+    el.getBoundingClientRect();
+    el.style.transition = 'stroke-dashoffset 1.4s ease-out'; el.style.strokeDashoffset = 0;
+    setTimeout(() => { el.style.strokeDasharray = ''; el.style.transition = ''; }, 1500);
+    const pts = coords.map(([lo, la]) => L.latLng(la, lo)), acum = [0];
+    for (let k = 1; k < pts.length; k++) acum.push(acum[k - 1] + pts[k - 1].distanceTo(pts[k]));
+    const total = acum[acum.length - 1] || 1;
+    const punto = L.circleMarker(pts[0], { radius: 5, color: '#08090B', weight: 2, fillColor: '#F0F0F0', fillOpacity: 1, interactive: false }).addTo(mapa);
+    st.capas.push(punto);
+    const t0 = performance.now() + 1400, dur = 2600;
+    (function paso(t) {
+      if (!mapa.hasLayer(punto)) return;
+      const p = Math.max(0, Math.min(1, (t - t0) / dur)), d = p * total;
+      let k = acum.findIndex((x) => x >= d); if (k <= 0) k = 1;
+      const f = (d - acum[k - 1]) / ((acum[k] - acum[k - 1]) || 1);
+      punto.setLatLng([pts[k - 1].lat + (pts[k].lat - pts[k - 1].lat) * f, pts[k - 1].lng + (pts[k].lng - pts[k - 1].lng) * f]);
+      if (p < 1) requestAnimationFrame(paso); else setTimeout(() => punto.remove(), 600);
+    })(performance.now());
   }
 
   function listaAlternativas() {
@@ -174,7 +204,10 @@
     badge.textContent = 'Riesgo ' + ev.nivel.toLowerCase();
     badge.className = 'badge lvl-' + ev.nivel.split(' ')[0];
     U.$('#r-veces').textContent = `${U.veces(ev.veces)} la siniestralidad típica de las vías con registros`;
-    U.$('#r-prob').textContent = U.pct(ev.pViaje, 2);
+    const niv = ['Bajo', 'Medio', 'Alto', 'Muy alto'].indexOf(ev.nivel);
+    U.$('#r-medidor').querySelectorAll('.seg4 i').forEach((x, k) => (x.className = k <= niv ? 'on' + (k + 1) : ''));
+    U.$('#r-medidor .aguja b').style.left = `calc(${(niv + 0.5) * 25}% - 1px)`;
+    U.contar(U.$('#r-prob'), ev.pViaje, (x) => U.pct(x, 2), 900);
     U.$('#r-dur').textContent = `${U.n0(a.durMin)} min`;
     U.$('#r-sal').textContent = a.fecha.toLocaleString('es-CO', { weekday: 'long', hour: '2-digit', minute: '2-digit' });
     const nums = [
@@ -203,15 +236,19 @@
     const boxes = [];
     if (st.siata?.ok) {
       boxes.push(lloviendo.length
-        ? [`🌧️ Lloviendo`, `${lloviendo.length} de ${a.cerca.length} pluviómetros SIATA cerca de la ruta reportan lluvia (máx. ${U.n1(Math.max(...lloviendo.map((e) => e.valor)))} mm)`]
-        : [a.cerca.length ? '☁️ Sin lluvia' : 'Sin estaciones', a.cerca.length ? `${a.cerca.length} pluviómetros SIATA a menos de 2 km no reportan lluvia ahora` : 'No hay pluviómetros SIATA a menos de 2 km']);
+        ? [`${U.ico('cloud-rain')} Lloviendo`, `${lloviendo.length} de ${a.cerca.length} pluviómetros SIATA cerca de la ruta reportan lluvia (máx. ${U.n1(Math.max(...lloviendo.map((e) => e.valor)))} mm)`]
+        : [a.cerca.length ? `${U.ico(h >= 18 || h < 6 ? 'moon' : 'sun')} Sin lluvia` : `${U.ico('cloud')} Sin estaciones`, a.cerca.length ? `${a.cerca.length} pluviómetros SIATA a menos de 2 km no reportan lluvia ahora` : 'No hay pluviómetros SIATA a menos de 2 km']);
     } else {
-      boxes.push(['SIATA no disponible', 'No se pudo consultar la lluvia en vivo; usamos solo la probabilidad histórica']);
+      boxes.push([`${U.ico('triangle-exclamation')} SIATA no disponible`, 'No se pudo consultar la lluvia en vivo; usamos solo la probabilidad histórica']);
     }
     boxes.push([p == null ? '—' : U.pct(p, 0), `de las horas llueve en ${a.fecha.toLocaleString('es-CO', { month: 'long' })} a las ${h}:00 (IDEAM ${String(RSM.clima.desde).slice(0, 4)}-${String(RSM.clima.hasta).slice(0, 4)})`]);
-    U.$('#r-clima').replaceChildren(...boxes.map(([v, l]) => U.el(`<div class="box"><b>${v}</b><span class="small muted">${U.esc(l)}</span></div>`)));
+    U.$('#r-clima').replaceChildren(...boxes.map(([v, l], k) => {
+      const box = U.el(`<div class="box"><b>${v}</b><span class="small muted">${U.esc(l)}</span></div>`);
+      if (k === 0 && st.siata?.ok && a.cerca.length) { box.classList.add(lloviendo.length ? 'llueve' : 'despejado'); if (lloviendo.length) gotas(box); }
+      return box;
+    }));
     U.$('#r-recs').replaceChildren(...recomendaciones(a, p, lloviendo.length > 0 && Math.abs(a.fecha - Date.now()) < 2 * 3600 * 1000)
-      .map(([i, t]) => U.el(`<li><span>${i}</span><span>${t}</span></li>`)));
+      .map(([i, t]) => U.lista([[i, t]])[0]));
   }
 
   /* cifras de los factores influyentes (las calcula el ETL; no se escriben a mano) */
@@ -221,6 +258,15 @@
     return i || {};
   }
 
+  /* gotas finas sobre la tarjeta cuando SIATA reporta lluvia */
+  function gotas(box) {
+    if (U.reducir()) return;
+    for (let k = 0; k < 26; k++) {
+      const g = document.createElement('i'); g.className = 'gota'; g.style.left = Math.random() * 100 + '%';
+      g.style.animationDuration = 0.6 + Math.random() * 0.5 + 's'; g.style.animationDelay = -Math.random() + 's'; box.append(g);
+    }
+  }
+
   function recomendaciones(a, pLluvia, llueve) {
     const m = st.medio, h = a.fecha.getHours(), r = [];
     const fMad = factor('franja', 'Madrugada'), fNoche = factor('franja', 'Noche'), fPico = factor('hora_pico', 'Hora pico');
@@ -228,35 +274,35 @@
     const noche = h >= 18 || h < 6, madrugada = h < 6, sol = h >= 9 && h <= 16;
     const lluvia = llueve || (pLluvia != null && pLluvia >= 0.2);
     if (lluvia) {
-      r.push(['🌧️', llueve ? '<b>Está lloviendo cerca de tu ruta.</b> Sal con tiempo: el pavimento mojado duplica la distancia de frenado.'
+      r.push(['cloud-rain', llueve ? '<b>Está lloviendo cerca de tu ruta.</b> Sal con tiempo: el pavimento mojado duplica la distancia de frenado.'
         : `<b>Probabilidad de lluvia alta para esta hora (${U.pct(pLluvia, 0)}).</b> Ten listo el equipo para lluvia.`]);
-      if (m === 'moto') r.push(['🏍️', 'Usa impermeable de colores vivos, evita frenar sobre líneas pintadas, tapas y rejillas, y no te refugies bajo puentes en la vía.']);
-      if (m === 'carro') r.push(['🚗', 'Enciende las luces, revisa las plumillas y deja el doble de distancia con el vehículo de adelante. Evita los charcos: pueden esconder huecos.']);
-      if (m === 'bici') r.push(['🚲', 'Baja la velocidad en curvas y bajadas, usa guardabarros y luces, y frena con anticipación.']);
-      if (m === 'pie') r.push(['🚶', 'Cruza solo por la cebra o el semáforo: con lluvia los conductores ven menos. Usa algo claro o reflectivo.']);
+      if (m === 'moto') r.push(['motorcycle', 'Usa impermeable de colores vivos, evita frenar sobre líneas pintadas, tapas y rejillas, y no te refugies bajo puentes en la vía.']);
+      if (m === 'carro') r.push(['car', 'Enciende las luces, revisa las plumillas y deja el doble de distancia con el vehículo de adelante. Evita los charcos: pueden esconder huecos.']);
+      if (m === 'bici') r.push(['bicycle', 'Baja la velocidad en curvas y bajadas, usa guardabarros y luces, y frena con anticipación.']);
+      if (m === 'pie') r.push(['person-walking', 'Cruza solo por la cebra o el semáforo: con lluvia los conductores ven menos. Usa algo claro o reflectivo.']);
     } else if (sol && !noche) {
-      r.push(['☀️', '<b>Baja probabilidad de lluvia a esta hora.</b> Protégete del sol: bloqueador, hidratación y gafas.']);
-      if (m === 'carro') r.push(['🕶️', 'Lleva gafas de sol o baja la visera: el reflejo en los parabrisas reduce la visibilidad.']);
-      if (m === 'moto' || m === 'bici') r.push(['🧴', 'El calor cansa más rápido: haz pausas si el trayecto es largo y no te quites la chaqueta ni el casco.']);
+      r.push(['sun', '<b>Baja probabilidad de lluvia a esta hora.</b> Protégete del sol: bloqueador, hidratación y gafas.']);
+      if (m === 'carro') r.push(['glasses', 'Lleva gafas de sol o baja la visera: el reflejo en los parabrisas reduce la visibilidad.']);
+      if (m === 'moto' || m === 'bici') r.push(['bottle-droplet', 'El calor cansa más rápido: haz pausas si el trayecto es largo y no te quites la chaqueta ni el casco.']);
     }
-    if (noche) r.push(['🌙', `${madrugada ? `<b>En la madrugada la letalidad es ${U.n1(fMad.rr)} veces la de la tarde.</b> `
+    if (noche) r.push(['moon', `${madrugada ? `<b>En la madrugada la letalidad es ${U.n1(fMad.rr)} veces la de la tarde.</b> `
       : `De noche la letalidad es ${U.n1(fNoche.rr)} veces la de la tarde. `}Usa prendas reflectivas y luces, y evita el alcohol al conducir.`]);
     const pico = (h >= 6 && h < 9) || (h >= 17 && h < 20);
     const habil = a.fecha.getDay() >= 1 && a.fecha.getDay() <= 5;
-    if (pico && habil) r.push(['⏱️', `Sales en <b>hora pico</b>: en días hábiles hay ${U.n1(fPico.rr)} veces más siniestros con heridos por hora. Si puedes, sal 30 minutos antes o después.`]);
-    if (m === 'pie') r.push(['⚠️', `En Medellín los peatones tienen la mayor letalidad: <b>${U.n0(fPeat.v)} muertos por cada 1.000 víctimas</b>, ${U.n1(fPeat.rr)} veces la de un ocupante de carro.`]);
-    if (m === 'moto') r.push(['🪖', `${U.pct(RSM.diagnostico.kpis.pct_moto, 0)} de las víctimas viales de Medellín iban en moto. Casco abrochado, luces encendidas y nada de zigzag entre carros.`]);
-    if (m === 'bici') r.push(['🚲', `Las bicicletas tienen una letalidad ${U.n1(fBici.rr)} veces la de los carros. Prefiere las ciclorrutas y hazte visible.`]);
+    if (pico && habil) r.push(['clock', `Sales en <b>hora pico</b>: en días hábiles hay ${U.n1(fPico.rr)} veces más siniestros con heridos por hora. Si puedes, sal 30 minutos antes o después.`]);
+    if (m === 'pie') r.push(['triangle-exclamation', `En Medellín los peatones tienen la mayor letalidad: <b>${U.n0(fPeat.v)} muertos por cada 1.000 víctimas</b>, ${U.n1(fPeat.rr)} veces la de un ocupante de carro.`]);
+    if (m === 'moto') r.push(['helmet-safety', `${U.pct(RSM.diagnostico.kpis.pct_moto, 0)} de las víctimas viales de Medellín iban en moto. Casco abrochado, luces encendidas y nada de zigzag entre carros.`]);
+    if (m === 'bici') r.push(['bicycle', `Las bicicletas tienen una letalidad ${U.n1(fBici.rr)} veces la de los carros. Prefiere las ciclorrutas y hazte visible.`]);
     const ev = a.ev, v = ev.victimas;
-    if (ev.nivel === 'Alto' || ev.nivel === 'Muy alto') r.push(['🚦', `Esta ruta pasa por vías con <b>${U.n1(ev.veces)} veces</b> la siniestralidad típica de la ciudad: baja la velocidad en los cruces y no uses el celular.`]);
+    if (ev.nivel === 'Alto' || ev.nivel === 'Muy alto') r.push(['traffic-light', `Esta ruta pasa por vías con <b>${U.n1(ev.veces)} veces</b> la siniestralidad típica de la ciudad: baja la velocidad en los cruces y no uses el celular.`]);
     if (v && v.n >= 30) {
-      if (v.moto >= 0.6 && m !== 'moto') r.push(['🏍️', `En este corredor el ${U.pct(v.moto, 0)} de las víctimas iba en moto: revisa los espejos y el punto ciego antes de cambiar de carril o girar.`]);
-      if (v.peaton >= 0.12 && m !== 'pie') r.push(['🚸', `El ${U.pct(v.peaton, 0)} de las víctimas de este corredor eran peatones: cede el paso en las cebras y cuidado al girar en las esquinas.`]);
-      if (m === 'pie' && v.peaton >= 0.12) r.push(['🚶', `Aquí los peatones son el ${U.pct(v.peaton, 0)} de las víctimas: usa puentes y semáforos peatonales aunque te tome más tiempo.`]);
+      if (v.moto >= 0.6 && m !== 'moto') r.push(['motorcycle', `En este corredor el ${U.pct(v.moto, 0)} de las víctimas iba en moto: revisa los espejos y el punto ciego antes de cambiar de carril o girar.`]);
+      if (v.peaton >= 0.12 && m !== 'pie') r.push(['person-walking-arrow-right', `El ${U.pct(v.peaton, 0)} de las víctimas de este corredor eran peatones: cede el paso en las cebras y cuidado al girar en las esquinas.`]);
+      if (m === 'pie' && v.peaton >= 0.12) r.push(['person-walking', `Aquí los peatones son el ${U.pct(v.peaton, 0)} de las víctimas: usa puentes y semáforos peatonales aunque te tome más tiempo.`]);
     }
     const t = a.tramos?.[0];
-    if (t) r.push(['📍', `Tramo con más siniestros de tu ruta: <b>${U.esc(t.dir || 'sin dirección')}</b> (${U.n0(t.tot)} siniestros con heridos). Atento ahí.`]);
-    if (a.segura === false && st.alts.some((x) => x.segura)) r.push(['🔀', 'Hay otra alternativa con menor riesgo por viaje: mírala en la lista de rutas.']);
+    if (t) r.push(['location-dot', `Tramo con más siniestros de tu ruta: <b>${U.esc(t.dir || 'sin dirección')}</b> (${U.n0(t.tot)} siniestros con heridos). Atento ahí.`]);
+    if (a.segura === false && st.alts.some((x) => x.segura)) r.push(['shuffle', 'Hay otra alternativa con menor riesgo por viaje: mírala en la lista de rutas.']);
     return r;
   }
 
@@ -272,8 +318,12 @@
       ? `<thead><tr><th>#</th><th>Dirección</th><th>Comuna</th><th class="n">Siniestros con heridos</th><th class="n">En el km</th></tr></thead><tbody>${
         a.tramos.map((t, k) => `<tr><td>${k + 1}</td><td>${U.esc(t.dir || '—')}</td><td>${U.esc(t.comuna || '')}</td><td class="n">${U.n0(t.tot)}</td><td class="n">${U.n1(t.m / 1000)}</td></tr>`).join('')}</tbody>`
       : '<tbody><tr><td class="empty">Ningún punto crítico a menos de 60 m de esta ruta.</td></tr></tbody>';
-    a.tramos.forEach((t, k) => st.capas.push(L.circleMarker([t.lat, t.lon], { radius: 9, color: '#c0392b', weight: 2, fillOpacity: .5 })
-      .bindTooltip(`${k + 1}. ${U.esc(t.dir || '')} · ${U.n0(t.tot)} siniestros`).addTo(mapa)));
+    a.tramos.forEach((t, k) => {
+      st.capas.push(L.circleMarker([t.lat, t.lon], { radius: 9, color: '#E53945', weight: 2, fillOpacity: .45 })
+        .bindTooltip(`${k + 1}. ${U.esc(t.dir || '')} · ${U.n0(t.tot)} siniestros`).addTo(mapa));
+      if (k < 3) st.capas.push(L.marker([t.lat, t.lon], { interactive: false, keyboard: false,
+        icon: L.divIcon({ className: '', html: '<div class="pulso"></div>', iconSize: [14, 14], iconAnchor: [7, 7] }) }).addTo(mapa));
+    });
     const v = a.ev.victimas;
     U.$('#r-comp').innerHTML = v ? `Víctimas registradas en este corredor (MEData 2014-2021, ${U.n0(v.n)}): ${U.pct(v.moto, 0)} iban en moto,
       ${U.pct(v.peaton, 0)} eran peatones, ${U.pct(v.vehiculo, 0)} iban en carro o bus y ${U.pct(v.bici, 0)} en bicicleta.` : '';
@@ -284,18 +334,32 @@
     const cams = RSM.camaras.map((c) => ({ ...c, ...Riesgo.cercania(c.lat, c.lon, puntos) }))
       .filter((c) => c.d <= 150).sort((x, y) => x.m - y.m);
     const tipo = { CCTV: 'Circuito cerrado', FDT: 'Fotodetección (fotomulta)', ARS: 'Apoyo semafórico' };
-    const color = { CCTV: '#0f6cbd', FDT: '#8a5bb5', ARS: '#2b8c99' };
-    cams.forEach((c) => st.capas.push(L.circleMarker([c.lat, c.lon], { radius: 6, color: color[c.tipo], weight: 2, fillOpacity: .9 })
-      .bindTooltip(`${tipo[c.tipo]} · ${U.esc(c.nombre || c.id)}`).addTo(mapa)));
+    const color = { CCTV: '#F0F0F0', FDT: '#B9BBC2', ARS: '#8A8D96' };
+    cams.forEach((c) => {
+      const sinFoto = c.tipo === 'CCTV' && !c.foto;
+      st.capas.push(L.circleMarker([c.lat, c.lon], { radius: 6, color: sinFoto ? '#5A5D66' : color[c.tipo], weight: 2,
+        fillColor: sinFoto ? '#08090B' : color[c.tipo], fillOpacity: .9, dashArray: sinFoto ? '2 2' : null })
+        .bindTooltip(`${tipo[c.tipo]} · ${U.esc(c.nombre || c.id)}${sinFoto ? ' · no disponible' : ''}`).addTo(mapa));
+    });
     const box = U.$('#r-cams');
     if (!cams.length) { box.replaceChildren(U.el('<p class="empty">No hay cámaras de tránsito a menos de 150 m de esta ruta.</p>')); return; }
     box.replaceChildren(...cams.map((c) => {
-      const foto = c.tipo === 'CCTV' && c.foto
-        ? `<a href="${U.esc(c.foto)}" target="_blank" rel="noopener"><img loading="lazy" src="${U.esc(c.foto)}?t=${Math.floor(Date.now() / 60000)}" alt="Foto en vivo de la cámara ${U.esc(c.nombre)}" onerror="this.replaceWith(Object.assign(document.createElement('div'),{className:'empty',style:'padding:10px',textContent:'Foto no disponible: ábrela en el SIMM'}))"></a>` : '';
+      let foto;
+      if (c.tipo === 'CCTV' && c.foto) {
+        foto = `<a class="cam-vis" href="${U.esc(c.foto)}" target="_blank" rel="noopener"><img loading="lazy" src="${U.esc(c.foto)}?t=${Math.floor(Date.now() / 60000)}" alt="Foto en vivo de la cámara ${U.esc(c.nombre)}" onerror="Ruta.sinSenal(this)"></a>`;
+      } else if (c.tipo === 'CCTV') {
+        foto = noDisponible('La fuente no publica la foto de esta cámara');
+      } else {
+        foto = `<div class="cam-tipo">${U.ico(c.tipo === 'FDT' ? 'gauge-high' : 'traffic-light')}<span>${c.tipo === 'FDT' ? 'Fotodetección' : 'Apoyo semafórico'} · sin imagen pública</span></div>`;
+      }
       const det = c.detecta?.length ? `<span class="muted">Detecta: ${c.detecta.join(', ')}${c.vel ? ` · máx. ${c.vel} km/h` : ''}</span>` : '';
       return U.el(`<div class="cam">${foto}<div class="t"><b>${U.esc(c.nombre || c.id)}</b><span class="muted">${tipo[c.tipo]} · km ${U.n1(c.m / 1000)}</span>
         ${c.sin300 != null ? `<span class="muted">${U.n0(c.sin300)} siniestros a 300 m (2019-2025)</span>` : ''}${det}</div></div>`);
     }));
+  }
+
+  function noDisponible(motivo) {
+    return `<div class="cam-off" role="img" aria-label="Cámara no disponible">${U.ico('video-slash')}<b>No disponible</b><span>${U.esc(motivo)}</span></div>`;
   }
 
   function estado(t, err) { const s = U.$('#r-status'); s.textContent = t; s.classList.toggle('err', !!err); }
@@ -303,6 +367,8 @@
   // ------------------------------------------------------------------ inicio
   let listo = false;
   window.Ruta = {
+    /* la foto de una CCTV no cargó (sin señal o el SIMM no responde): marca de no disponible */
+    sinSenal(img) { const a = img.closest('a'); if (a) a.replaceWith(U.el(noDisponible('Sin señal en este momento. Ábrela en el SIMM'))); },
     init() {
       if (listo) { mapa.invalidateSize(); return; }
       listo = true;

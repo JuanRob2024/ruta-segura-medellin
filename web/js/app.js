@@ -21,12 +21,45 @@
       for (let i = 0; i < r.muertes_sisc; i++) {
         const d = document.createElement('i');
         d.title = r.anio;
+        d.dataset.a = r.anio;
         d.style.setProperty('--o', (0.35 + 0.65 * (r.anio - 2014) / 9).toFixed(2));
         frag.append(d);
       }
     });
     box.append(frag);
-    U.$('#hero-dots-leg').textContent = `Cada punto es una persona fallecida en las vías de Medellín (SISC ${serie[0].anio}-${serie[serie.length - 1].anio}). Los más recientes, más claros.`;
+    const leyenda = `Cada punto es una persona fallecida en las vías de Medellín (SISC ${serie[0].anio}-${serie[serie.length - 1].anio}). Los más recientes, más claros. Pasa por un año para verlo.`;
+    U.$('#hero-dots-leg').textContent = leyenda;
+    const anios = U.$('#hero-anios');
+    const marcar = (a) => {
+      box.classList.toggle('filtro', a != null);
+      box.querySelectorAll('i').forEach((i) => i.classList.toggle('on', +i.dataset.a === a));
+      anios.querySelectorAll('button').forEach((b) => b.classList.toggle('on', +b.dataset.a === a));
+      const r = serie.find((x) => x.anio === a);
+      U.$('#hero-dots-leg').textContent = r ? `${r.anio}: ${U.n0(r.muertes_sisc)} personas fallecidas en las vías de Medellín (SISC).` : leyenda;
+    };
+    serie.forEach((r) => {
+      const b = U.el(`<button class="chip" data-a="${r.anio}">${r.anio}</button>`);
+      b.addEventListener('mouseenter', () => marcar(r.anio));
+      b.addEventListener('focus', () => marcar(r.anio));
+      b.addEventListener('click', () => marcar(r.anio));
+      anios.append(b);
+    });
+    anios.addEventListener('mouseleave', () => marcar(null));
+  }
+
+  /* 10 · las tarjetas aparecen al entrar en pantalla (todas las vistas) */
+  let io = null;
+  function revelar(seccion) {
+    const els = seccion.querySelectorAll('.reveal:not(.in)');
+    if (U.reducir() || !('IntersectionObserver' in window)) { els.forEach((e) => e.classList.add('in')); return; }
+    io = io || new IntersectionObserver((ents) => ents.forEach((e) => { if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); } }), { threshold: .12 });
+    els.forEach((e) => io.observe(e));
+  }
+
+  /* barra de progreso de lectura bajo el encabezado */
+  function progreso() {
+    const h = document.documentElement, max = h.scrollHeight - h.clientHeight;
+    U.$('#progreso').style.width = (max > 0 ? (100 * h.scrollTop) / max : 0) + '%';
   }
 
   function portada() {
@@ -58,6 +91,8 @@
       try { window[mod].init(); } catch (e) { console.error(e); }
     }
     window.scrollTo(0, 0);
+    revelar(U.$('#v-' + v));
+    progreso();
   }
 
   document.addEventListener('DOMContentLoaded', () => {
@@ -69,6 +104,7 @@
     U.$('#meta-gen').textContent = `Datos actualizados: ${RSM.meta.generado}`;
     portada();
     window.addEventListener('hashchange', ir);
+    window.addEventListener('scroll', progreso, { passive: true });
     ir();
   });
 })();

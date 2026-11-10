@@ -10,71 +10,92 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;700&display=swap">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 <link rel="stylesheet" href="css/app.css">
 </head>
 <body>
 <header class="top">
   <div class="in">
-    <a class="brand" href="#inicio"><span class="logo" aria-hidden="true"></span>Ruta Segura Medellín</a>
-    <nav class="tabs" aria-label="Módulos">
-      <a href="#inicio">Inicio</a>
+    <a class="brand" href="#inicio" aria-label="Ruta Segura Medellín, inicio">
+      <svg class="logo-ruta" viewBox="0 0 46 18" width="46" height="18" aria-hidden="true">
+        <path class="via" d="M6 12 C 14 12, 16 4, 24 5 S 36 14, 42 6" fill="none" stroke="#F0F0F0" stroke-width="1.6"/>
+        <rect class="cuadro" x="1" y="7" width="10" height="10" fill="#E53945"/>
+        <rect class="meta-ruta" x="39" y="3" width="5" height="5" fill="#F0F0F0"/>
+      </svg>Ruta Segura Medellín</a>
+    <nav class="tabs" aria-label="Capítulos">
+      <a href="#inicio">Introducción</a>
       <a href="#diagnostico">1 · ¿Qué está pasando?</a>
       <a href="#ruta">2 · Consulta tu ruta</a>
       <a href="#intervenir">3 · ¿Dónde intervenir?</a>
-      <a href="#datos">4 · Datos y calidad</a>
+      <a href="#datos">4 · Método y datos</a>
     </nav>
     <span class="meta" id="meta-gen">—</span>
   </div>
+  <div class="progreso" aria-hidden="true"><span id="progreso"></span></div>
 </header>
 
 <main>
-  <!-- =============================================================== INICIO -->
+  <!-- =============================================================== INTRODUCCIÓN -->
   <section class="view" id="v-inicio">
     <div class="hero">
       <div class="head">
-        <p class="note muted">Medellín, Colombia · siniestralidad vial</p>
+        <p class="note muted">Medellín, Colombia · investigación con datos abiertos · siniestralidad vial</p>
         <h1>Detrás de cada cifra hay alguien que no volvió a casa.</h1>
         <div class="hero-n"><b id="hero-n">0</b><span>personas fallecidas en las vías, <span id="hero-d"></span> (SISC)</span></div>
         <p class="lede" id="hero-s"></p>
         <p class="lede">Cruzamos <b>11 años</b> de datos abiertos de <b>MEData</b>, <b>GeoMedellín</b>, <b>IDEAM</b> y <b>SIATA</b> para ver dónde, cuándo y a quién le ocurre, y cuánto riesgo tiene tu ruta.</p>
         <div class="cta">
-          <a class="btn primary" href="#ruta">Consultar una ruta</a>
-          <a class="btn" href="#diagnostico">Ver el diagnóstico</a>
+          <a class="btn primary" href="#diagnostico">Empezar a leer <i class="fa-solid fa-arrow-right" aria-hidden="true"></i></a>
+          <a class="btn" href="#ruta">Ir directo a consultar una ruta</a>
         </div>
       </div>
       <div class="vidas" role="img" aria-label="Un punto por cada persona fallecida en las vías de Medellín">
+        <div class="anios-dots" id="hero-anios" aria-label="Resaltar un año"></div>
         <div id="hero-dots"></div>
         <p class="note" id="hero-dots-leg"></p>
       </div>
     </div>
+
+    <div class="pregunta reveal">
+      <span class="kicker">Pregunta de investigación</span>
+      <p>¿Dónde, cuándo y a quién afectan los siniestros viales en Medellín, qué tan riesgosa es una ruta concreta a una hora concreta, y
+        en qué lugares falta vigilancia?</p>
+    </div>
+
     <div class="hallazgos" id="hallazgos-inicio"></div>
+
+    <div class="head" style="margin-top:6px"><span class="kicker">Cómo leer este informe</span>
+      <p class="muted">Cuatro capítulos, de lo general a lo accionable. Puedes leerlos en orden o ir directo al que te sirva.</p></div>
     <div class="mods">
-      <a class="mod" href="#diagnostico"><div class="card"><span class="n">MÓDULO 1</span><h3>¿Qué está pasando?</h3>
-        <p class="muted small">Evolución, horas y días críticos, factores influyentes, actores viales y comunas.</p></div></a>
-      <a class="mod" href="#ruta"><div class="card"><span class="n">MÓDULO 2</span><h3>Consulta tu ruta</h3>
-        <p class="muted small">Probabilidad de siniestro en tu recorrido, tramos críticos, cámaras en la vía, lluvia y recomendaciones.</p></div></a>
-      <a class="mod" href="#intervenir"><div class="card"><span class="n">MÓDULO 3</span><h3>¿Dónde intervenir?</h3>
-        <p class="muted small">Puntos críticos sin cámara a 300 m: priorización para la Secretaría de Movilidad.</p></div></a>
-      <a class="mod" href="#datos"><div class="card"><span class="n">MÓDULO 4</span><h3>Datos y calidad</h3>
-        <p class="muted small">Fuentes, reglas de limpieza, cuarentena y propuesta de mejora a MEData.</p></div></a>
+      <a class="mod" href="#diagnostico"><div class="card"><span class="n">CAPÍTULO 1 · DIAGNÓSTICO</span><h3>¿Qué está pasando?</h3>
+        <p class="muted small">La tendencia, quiénes corren más riesgo, a qué horas y en qué comunas. Personalizado según cómo te mueves.</p></div></a>
+      <a class="mod" href="#ruta"><div class="card"><span class="n">CAPÍTULO 2 · APLICACIÓN</span><h3>Consulta tu ruta</h3>
+        <p class="muted small">El riesgo de tu recorrido, sus tramos críticos, las cámaras en la vía, la lluvia y qué hacer.</p></div></a>
+      <a class="mod" href="#intervenir"><div class="card"><span class="n">CAPÍTULO 3 · RECOMENDACIÓN</span><h3>¿Dónde intervenir?</h3>
+        <p class="muted small">Los lugares con más siniestros sin vigilancia y las conclusiones para la Secretaría de Movilidad.</p></div></a>
+      <a class="mod" href="#datos"><div class="card"><span class="n">CAPÍTULO 4 · MÉTODO</span><h3>Método y datos</h3>
+        <p class="muted small">Fuentes, limpieza, calidad y nuestra propuesta de mejora a MEData.</p></div></a>
     </div>
     <div class="card cierre"><h3>Cada decisión en la vía tiene consecuencias</h3>
       <p class="muted">Una cámara, un límite de velocidad, una hora de salida o un casco abrochado cambian el resultado de un segundo. Los datos de esta página son personas: consultar el riesgo de tu ruta es una forma de cuidarlas.</p></div>
   </section>
 
-  <!-- =============================================================== MÓDULO 1 -->
+  <!-- =============================================================== CAPÍTULO 1 -->
   <section class="view" id="v-diagnostico">
     <div class="head">
-      <h2>1 · ¿Qué está pasando en las vías de Medellín?</h2>
-      <p class="muted">Lo esencial de 11 años de datos, contado para ti. Dinos cómo te mueves y por dónde, y te mostramos lo que más te afecta.</p>
+      <span class="kicker">Capítulo 1 · Diagnóstico</span>
+      <h2>¿Qué está pasando en las vías de Medellín?</h2>
+      <p class="muted">Lo esencial de 11 años de datos, contado para ti. Primero el panorama de la ciudad según cómo te mueves; después, lo que
+        pasa en tu comuna.</p>
     </div>
 
     <div class="perfil" role="group" aria-label="Personalizar">
       <div class="field"><label>Me muevo en</label>
-        <div class="seg" id="p-medio">
-          <button data-m="Moto" class="on">Moto</button><button data-m="Vehículo">Carro o bus</button>
-          <button data-m="Bicicleta">Bici</button><button data-m="Peatón">A pie</button></div></div>
-      <div class="field"><label for="p-comuna">Mi comuna o corregimiento</label><select id="p-comuna"></select></div>
+        <div class="seg seg-ico" id="p-medio">
+          <button data-m="Moto" class="on"><i class="fa-solid fa-motorcycle" aria-hidden="true"></i>Moto</button>
+          <button data-m="Vehículo"><i class="fa-solid fa-car" aria-hidden="true"></i>Carro o bus</button>
+          <button data-m="Bicicleta"><i class="fa-solid fa-bicycle" aria-hidden="true"></i>Bici</button>
+          <button data-m="Peatón"><i class="fa-solid fa-person-walking" aria-hidden="true"></i>A pie</button></div></div>
     </div>
 
     <div class="tendencia reveal" id="d-tendencia"></div>
@@ -91,6 +112,17 @@
     </div>
 
     <div class="grid two">
+      <div class="card reveal"><h3>¿Y cuando llueve?</h3><div id="d-lluvia"></div></div>
+      <div class="card reveal"><h3>Tres cosas que puedes hacer hoy</h3><ul class="recs" id="d-tips"></ul></div>
+    </div>
+
+    <div class="perfil perfil-comuna" role="group" aria-label="Elegir comuna">
+      <div class="head" style="gap:2px"><span class="kicker">En tu comuna</span>
+        <p class="muted small">Elige tu comuna o corregimiento para ver cómo está frente a la ciudad y dónde tener más cuidado.</p></div>
+      <div class="field"><label for="p-comuna">Mi comuna o corregimiento</label><select id="p-comuna"></select></div>
+    </div>
+
+    <div class="grid two">
       <div class="card reveal"><h3 id="d-com-tit">Tu comuna</h3>
         <div id="d-comuna"></div></div>
       <div class="card reveal"><h3>Dónde tener más cuidado</h3>
@@ -98,18 +130,16 @@
         <div class="map" id="map-diag"></div></div>
     </div>
 
-    <div class="grid two">
-      <div class="card reveal"><h3>¿Y cuando llueve?</h3><div id="d-lluvia"></div></div>
-      <div class="card reveal"><h3>Tres cosas que puedes hacer hoy</h3><ul class="recs" id="d-tips"></ul></div>
-    </div>
-    <p class="muted small">¿Quieres el detalle técnico (tasas, factores, simulaciones y calidad de datos)?
-      <a href="jurado.html">Abre la página de análisis para el jurado</a>.</p>
+    <a class="sigue reveal" href="#ruta"><span class="kicker">Siguiente · Capítulo 2</span>
+      <b>Ya sabes cuándo y dónde se concentra el riesgo. ¿Qué tan riesgosa es la ruta que vas a tomar hoy? <i class="fa-solid fa-arrow-right" aria-hidden="true"></i></b></a>
+    <p class="muted small">¿Quieres el detalle técnico (tasas, factores, simulaciones)? <a href="jurado.html">Página de análisis para el jurado</a>.</p>
   </section>
 
-  <!-- =============================================================== MÓDULO 2 -->
+  <!-- =============================================================== CAPÍTULO 2 -->
   <section class="view" id="v-ruta">
     <div class="head">
-      <h2>2 · Consulta tu ruta</h2>
+      <span class="kicker">Capítulo 2 · Aplicación</span>
+      <h2>Consulta tu ruta</h2>
       <p class="muted">Escribe origen y destino (o márcalos en el mapa). Calculamos hasta 3 rutas, el riesgo histórico de cada una, las cámaras
         en el camino, la lluvia en vivo de SIATA y recomendaciones para tu viaje.</p>
     </div>
@@ -117,27 +147,35 @@
       <div class="card form">
         <div class="field"><label for="f-origen">Origen</label>
           <div class="row"><input id="f-origen" placeholder="Ej.: Parque Berrío" autocomplete="off">
-            <button class="ico" id="b-pick-o" title="Marcar el origen en el mapa">📍</button>
-            <button class="ico" id="b-geo" title="Usar mi ubicación">◎</button></div>
+            <button class="ico" id="b-pick-o" title="Marcar el origen en el mapa" aria-label="Marcar el origen en el mapa"><i class="fa-solid fa-location-dot"></i></button>
+            <button class="ico" id="b-geo" title="Usar mi ubicación" aria-label="Usar mi ubicación"><i class="fa-solid fa-location-crosshairs"></i></button></div>
           <div class="sug" id="s-origen" hidden></div></div>
         <div class="field"><label for="f-destino">Destino</label>
           <div class="row"><input id="f-destino" placeholder="Ej.: Universidad Nacional" autocomplete="off">
-            <button class="ico" id="b-pick-d" title="Marcar el destino en el mapa">🏁</button></div>
+            <button class="ico" id="b-pick-d" title="Marcar el destino en el mapa" aria-label="Marcar el destino en el mapa"><i class="fa-solid fa-flag-checkered"></i></button></div>
           <div class="sug" id="s-destino" hidden></div></div>
         <div class="field"><label for="f-hora">Salida</label><input id="f-hora" type="datetime-local"></div>
         <div class="field"><label>¿Cómo viajas?</label>
-          <div class="seg" id="f-medio">
-            <button data-m="carro" class="on">Carro</button><button data-m="moto">Moto</button>
-            <button data-m="bici">Bici</button><button data-m="pie">A pie</button></div></div>
+          <div class="seg seg-ico" id="f-medio">
+            <button data-m="carro" class="on"><i class="fa-solid fa-car" aria-hidden="true"></i>Carro</button>
+            <button data-m="moto"><i class="fa-solid fa-motorcycle" aria-hidden="true"></i>Moto</button>
+            <button data-m="bici"><i class="fa-solid fa-bicycle" aria-hidden="true"></i>Bici</button>
+            <button data-m="pie"><i class="fa-solid fa-person-walking" aria-hidden="true"></i>A pie</button></div></div>
         <button class="btn primary" id="b-calc">Calcular ruta y riesgo</button>
         <p class="status" id="r-status">Las rutas usan OSRM y la búsqueda usa Photon (OpenStreetMap), gratis y sin llave. Hacemos una sola consulta por clic.</p>
         <div class="alts" id="r-alts"></div>
       </div>
       <div class="card" style="padding:10px"><div class="map big" id="map-ruta"></div></div>
     </div>
+    <div class="carga-ruta" id="r-carga" hidden>
+      <div class="camino"></div><div class="grid"><div class="sk-card"><div class="sk w70"></div><div class="sk"></div><div class="sk w45"></div></div>
+      <div class="sk-card"><div class="sk w45"></div><div class="sk"></div><div class="sk w70"></div></div></div>
+    </div>
     <div id="r-result" hidden>
       <div class="grid">
         <div class="card"><h3>Riesgo de la ruta</h3>
+          <div class="medidor" id="r-medidor" aria-hidden="true"><div class="seg4"><i></i><i></i><i></i><i></i></div>
+            <div class="seg4-et"><span>Bajo</span><span>Medio</span><span>Alto</span><span>Muy alto</span></div><div class="aguja"><b></b></div></div>
           <div class="level"><span class="badge" id="r-nivel">—</span><span class="muted small" id="r-veces"></span></div>
           <div><span class="prob" id="r-prob">—</span>
             <p class="small">probabilidad de que ocurra un siniestro con heridos en el corredor de tu ruta <b>mientras viajas</b>
@@ -151,52 +189,63 @@
       </div>
       <div class="grid two" style="margin-top:16px">
         <div class="card"><h3>Tramos críticos en tu ruta</h3>
-          <p class="note">Puntos críticos (celdas de ~110 m) a menos de 60 m del recorrido, del más al menos siniestrado.</p>
+          <p class="note">Puntos críticos (celdas de ~110 m) a menos de 60 m del recorrido, del más al menos siniestrado. Los tres primeros laten en el mapa.</p>
           <div class="tbl"><table id="r-tramos"></table></div>
           <p class="note" id="r-comp"></p></div>
         <div class="card"><h3>Cámaras en tu ruta</h3>
-          <p class="note">Cámaras de tránsito a menos de 150 m del recorrido (GeoMedellín). Las CCTV muestran su foto en vivo del SIMM.</p>
+          <p class="note">Cámaras de tránsito a menos de 150 m del recorrido (GeoMedellín). Las CCTV muestran su foto en vivo del SIMM; si no hay señal, lo indicamos.</p>
           <div class="cams" id="r-cams"></div></div>
       </div>
     </div>
+    <a class="sigue reveal" href="#intervenir"><span class="kicker">Siguiente · Capítulo 3</span>
+      <b>Muchas de las esquinas más peligrosas de tu ruta no tienen una cámara cerca. ¿Dónde convendría intervenir primero? <i class="fa-solid fa-arrow-right" aria-hidden="true"></i></b></a>
   </section>
 
-  <!-- =============================================================== MÓDULO 3 -->
+  <!-- =============================================================== CAPÍTULO 3 -->
   <section class="view" id="v-intervenir">
     <div class="head">
-      <h2>3 · ¿Dónde intervenir?</h2>
+      <span class="kicker">Capítulo 3 · Recomendación</span>
+      <h2>¿Dónde intervenir?</h2>
       <p class="muted" id="i-lede"></p>
     </div>
     <div class="grid two">
-      <div class="card"><h3>Puntos prioritarios sin cámara CCTV</h3>
+      <div class="card reveal"><h3>Puntos prioritarios sin cámara CCTV</h3>
         <p class="note" id="i-regla"></p>
         <div class="map big" id="map-int"></div></div>
-      <div class="card"><h3>Ranking</h3>
+      <div class="card reveal"><h3>Ranking</h3>
         <div class="tbl" style="max-height:560px"><table id="t-int"></table></div></div>
     </div>
-    <div class="card"><h3>Comunas sin ninguna cámara CCTV</h3>
+    <div class="card reveal"><h3>Comunas sin ninguna cámara CCTV</h3>
       <p class="note">Siniestros con heridos o muertos 2019-2025 en comunas y corregimientos donde GeoMedellín no registra cámaras de circuito cerrado.</p>
       <div class="chart"><canvas id="ch-sincctv"></canvas></div></div>
+    <div class="card conclusiones reveal"><h3>Conclusiones y recomendaciones</h3><ol id="i-concl"></ol></div>
+    <a class="sigue reveal" href="#datos"><span class="kicker">Siguiente · Capítulo 4</span>
+      <b>¿Cómo sabemos todo esto? Las fuentes, la limpieza de los datos y lo que le proponemos a MEData. <i class="fa-solid fa-arrow-right" aria-hidden="true"></i></b></a>
   </section>
 
-  <!-- =============================================================== MÓDULO 4 -->
+  <!-- =============================================================== CAPÍTULO 4 -->
   <section class="view" id="v-datos">
     <div class="head">
-      <h2>4 · Datos y calidad</h2>
+      <span class="kicker">Capítulo 4 · Método</span>
+      <h2>Método y datos</h2>
       <p class="muted">De dónde salen los datos, qué ruido traen y cómo se limpian. Todo lo genera el pipeline <code>python -m etl run</code>. El detalle técnico, la validación de cifras y los simuladores están en la <a href="jurado.html">página de análisis para el jurado</a>.</p>
     </div>
-    <div class="card"><h3>Del portal a esta página</h3><div class="flow" id="d-flow"></div></div>
-    <div class="card"><h3>Fuentes</h3><div class="tbl"><table id="t-fuentes"></table></div></div>
-    <div class="card"><h3>Reglas de limpieza aplicadas (conteos de la última ejecución)</h3><div class="grid" id="d-reglas"></div></div>
+    <div class="card reveal"><h3>Del portal a esta página</h3><div class="flow" id="d-flow"></div></div>
+    <div class="card reveal"><h3>Fuentes</h3><div class="tbl"><table id="t-fuentes"></table></div></div>
+    <div class="card reveal"><h3>Reglas de limpieza aplicadas (conteos de la última ejecución)</h3><div class="grid" id="d-reglas"></div></div>
     <div class="grid two">
-      <div class="card"><h3>Lo que encontramos en MEData</h3><ul class="recs" id="d-hall"></ul></div>
-      <div class="card prop"><h3>Propuesta de apertura y mejora</h3><ul class="recs" id="d-prop"></ul></div>
+      <div class="card reveal"><h3>Lo que encontramos en MEData</h3><ul class="recs" id="d-hall"></ul></div>
+      <div class="card prop reveal"><h3>Propuesta de apertura y mejora</h3><ul class="recs" id="d-prop"></ul></div>
     </div>
+    <div class="card reveal"><h3>Limitaciones</h3><ul class="recs" id="d-lim"></ul></div>
+    <a class="sigue reveal" href="#inicio"><span class="kicker">Fin del informe</span>
+      <b>Volver a la introducción <i class="fa-solid fa-arrow-up" aria-hidden="true"></i></b>
+      <span class="muted small">Documentación completa en el repositorio · Análisis técnico en la página del jurado</span></a>
   </section>
 </main>
 <footer>
   Datos: Alcaldía de Medellín (MEData, GeoMedellín, SIMM), SIATA y IDEAM vía datos.gov.co, bajo licencia CC BY-SA 4.0. Mapa base ©
-  colaboradores de OpenStreetMap. Rutas: OSRM. Búsqueda: Photon (komoot). Hackathon de Datos ITM 2026 · <a href="https://github.com/JuanRob2024/ruta-segura-medellin/blob/main/DOCUMENTACION.md" target="_blank" rel="noopener">Documentación técnica</a> · <a href="../docs/ejemplo_funcionamiento.html">Cómo se calcula el riesgo</a> · <a href="jurado.html">Análisis para el jurado</a>
+  colaboradores de OpenStreetMap. Rutas: OSRM. Búsqueda: Photon (komoot). Íconos: Font Awesome. Hackathon de Datos ITM 2026 · <a href="https://github.com/JuanRob2024/ruta-segura-medellin/blob/main/DOCUMENTACION.md" target="_blank" rel="noopener">Documentación técnica</a> · <a href="../docs/ejemplo_funcionamiento.html">Cómo se calcula el riesgo</a> · <a href="jurado.html">Análisis para el jurado</a>
 </footer>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
