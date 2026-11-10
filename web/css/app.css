@@ -337,3 +337,9 @@ body.calculando .via { animation: via-carga 1.2s ease-in-out infinite; }
 .tabs a { padding: 7px 9px; font-size: 14.5px; }
 .top .meta { font-size: 12px; }
 .brand { gap: 8px; }
+
+/* estado de la extracción */
+.top .meta .aviso { color: var(--accent); text-decoration: none; margin-left: 4px; }
+.est-ok, .est-sin_cambios { color: var(--fg); }
+.est-rechazada, .est-error { color: var(--accent); font-weight: 600; }
+#t-estado td:nth-child(2) { white-space: nowrap; }

@@ -458,9 +458,15 @@ def meta(con, cfg) -> dict:
     man = json.loads(man_p.read_text(encoding="utf-8")) if man_p.exists() else {}
     t = _tables(con)
     filas = {x: _one(con, f"SELECT COUNT(*) FROM {x}")[0] for x in sorted(t) if x.startswith(("fact_", "dim_", "stg_"))}
+    rep_p = cfg["paths"]["reports"] / "extraccion.json"
+    rep = json.loads(rep_p.read_text(encoding="utf-8")) if rep_p.exists() else {}
+    estado = {k: {"estado": v.get("estado"), "detalle": v.get("detalle"),
+                  "ultima_descarga_buena": man.get(k, {}).get("extracted_at") or v.get("ultima_descarga_buena")}
+              for k, v in rep.get("fuentes", {}).items()}
     return {"generado": datetime.now().strftime("%Y-%m-%d %H:%M"), "extraccion": {
         k: v.get("extracted_at") for k, v in man.items()}, "filas": filas,
-        "corte_medata": cfg["web"]["corte_medata"]}
+        "corte_medata": cfg["web"]["corte_medata"],
+        "ultima_extraccion": rep.get("fin"), "estado_fuentes": estado, "fuentes_fallidas": rep.get("fallidas", [])}
 
 
 # ----------------------------------------------------------------------------- orquestación

@@ -101,7 +101,9 @@
       return;
     }
     U.chartDefaults();
-    U.$('#meta-gen').textContent = `Datos actualizados: ${RSM.meta.generado}`;
+    const fall = RSM.meta.fuentes_fallidas || [];
+    U.$('#meta-gen').innerHTML = `Datos actualizados: ${RSM.meta.generado}` + (fall.length
+      ? ` · <a href="#datos" class="aviso" title="${U.esc(fall.join(', '))}">${U.ico('triangle-exclamation')} ${fall.length} fuente${fall.length > 1 ? 's' : ''} con datos de la corrida anterior</a>` : '');
     portada();
     window.addEventListener('hashchange', ir);
     window.addEventListener('scroll', progreso, { passive: true });

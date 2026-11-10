@@ -14,8 +14,40 @@
     ['datos.gov.co · IDEAM', 'Precipitación (s54a-sgyg), estación Olaya Herrera', 'Socrata API', 'https://www.datos.gov.co/Ambiente-y-Desarrollo-Sostenible/Precipitaci-n/s54a-sgyg', 'Efecto de la lluvia y probabilidad histórica de lluvia', 'fact_clima_hora'],
   ];
 
+  const ESTADO = {
+    ok: ['circle-check', 'Actualizada'], sin_cambios: ['circle-check', 'Sin cambios en la fuente'],
+    rechazada: ['triangle-exclamation', 'Rechazada'], error: ['circle-xmark', 'No respondió'],
+  };
+  const NOMBRE = (k) => k.replace('medata:', 'MEData · ').replace('arcgis:', 'GeoMedellín · ').replace('lluvia', 'datos.gov.co · lluvia IDEAM')
+    .replace('siata', 'SIATA · pluviómetros').replace(/_/g, ' ');
+
+  /* mensaje técnico → frase corta para el lector (el detalle completo queda en data/reports/extraccion.json) */
+  function detalleClaro(d) {
+    if (!d) return '';
+    const host = /host='([^']+)'/.exec(d);
+    if (host) return `El servidor ${host[1]} no respondió.`;
+    if (/servidor sin respuesta/.test(d)) return 'Mismo servidor caído: no se volvió a intentar.';
+    if (/Timeout|timed out/i.test(d)) return 'La fuente tardó demasiado en responder.';
+    return d.length > 140 ? d.slice(0, 140) + '…' : d;
+  }
+
+  function estadoExtraccion(M) {
+    const E = M.estado_fuentes || {};
+    const claves = Object.keys(E);
+    if (!claves.length) { U.$('#d-estado-nota').textContent = 'Aún no hay un reporte de extracción (ejecute python -m etl run).'; return; }
+    const fall = M.fuentes_fallidas || [];
+    U.$('#d-estado-nota').innerHTML = `Última extracción: ${U.esc(String(M.ultima_extraccion || '').replace('T', ' ').slice(0, 16))} UTC. ` +
+      (fall.length ? `<b>${fall.length} fuente(s) no se actualizaron</b>; la página usa su última copia buena, sin datos a medias.`
+        : 'Todas las fuentes respondieron bien.') + ' Las fuentes marcadas usan su última copia buena. Antes de cada extracción se guarda una copia comprimida de los datos crudos.';
+    U.$('#t-estado').innerHTML = `<thead><tr><th>Fuente</th><th>Estado</th><th>Última descarga buena</th><th>Detalle</th></tr></thead><tbody>${
+      claves.sort().map((k) => { const e = E[k], [ic, txt] = ESTADO[e.estado] || ['circle-question', e.estado];
+        return `<tr class="${fall.includes(k) ? 'hi' : ''}"><td>${U.esc(NOMBRE(k))}</td><td class="est-${e.estado}">${U.ico(ic)} ${txt}</td>
+          <td class="small">${U.esc(String(e.ultima_descarga_buena || '—').replace('T', ' ').slice(0, 16))}</td><td class="small muted" title="${U.esc(e.detalle || '')}">${U.esc(detalleClaro(e.detalle))}</td></tr>`; }).join('')}</tbody>`;
+  }
+
   function render() {
     const M = RSM.meta;
+    estadoExtraccion(M);
     U.$('#d-flow').replaceChildren(...[
       ['1 · Extraer', 'MEData (DKAN), GeoMedellín (ArcGIS), datos.gov.co (Socrata), SIATA. Incremental, con reintentos.'],
       ['2 · Limpiar', 'Texto, fechas, coordenadas, comodines, duplicados. Lo inservible va a cuarentena con su motivo.'],

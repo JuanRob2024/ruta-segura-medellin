@@ -10,6 +10,16 @@ paths:
   warehouse: data/warehouse/movilidad_medellin.duckdb
   snapshots: data/camaras/snapshots
   reports: data/reports
+  backups: data/backups    # copias comprimidas de data/raw antes de cada extracción
+
+# Si una fuente falla o llega sospechosamente pequeña, se conserva la última copia buena.
+validacion:
+  min_proporcion: 0.5      # se rechaza una descarga con menos del 50 % de las filas de la anterior
+
+respaldo:
+  conservar: 3             # copias de data/raw que se guardan (las más antiguas se borran)
+  min_horas: 20            # no se hace otra copia si la última tiene menos de estas horas
+  copia_externa: ""        # opcional: carpeta fuera del disco del proyecto (p. ej. una carpeta de OneDrive)
 
 http:
   timeout_s: 120

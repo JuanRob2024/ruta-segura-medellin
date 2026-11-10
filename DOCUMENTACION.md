@@ -477,12 +477,44 @@ Abrir `web/index.html` con doble clic. Otros comandos:
 | `python -m etl transform` | Reprocesa desde `data/raw` sin descargar |
 | `python -m etl web` | Regenera solo los datos de la página |
 | `python -m etl extract --force` | Fuerza la descarga aunque la fuente no haya cambiado |
+| `python -m etl respaldar` | Hace ya una copia comprimida de `data/raw` |
+| `python -m etl restaurar [--archivo raw_….zip]` | Devuelve `data/raw` a una copia (la más reciente por defecto); luego `python -m etl transform` |
 | `python -m etl camaras --rondas 1` | Guarda una foto de cada cámara CCTV |
 | `programar_windows.bat` | Programa el ETL cada lunes y la captura de cámaras cada 5 min |
 
-**Robustez:** la descarga directa reanuda con `Range` si se corta (en la revisión de la V1 se cayó a los 38 MB). MEData y la
-lluvia son incrementales: los años cerrados no se vuelven a pedir. Si una fuente falla, el resto del pipeline continúa y
-el error queda en el log.
+### 12.1 ¿Qué pasa si la extracción automática falla?
+
+Principio: **una fuente caída o defectuosa nunca reemplaza a la última copia buena**, y el fallo nunca pasa inadvertido.
+
+```mermaid
+flowchart TD
+  R["Antes de descargar:<br/>copia comprimida de data/raw<br/>(data/backups, se guardan 3)"] --> D
+  D["Descarga a un archivo temporal<br/>reintentos HTTP · reanuda con Range<br/>MEData: Selenium y datastore de respaldo"] --> V{"¿Respondió?"}
+  V -->|no| E["estado = error<br/>se conserva la copia anterior"]
+  V -->|sí| C{"¿Trae al menos el 50 %<br/>de las filas de la copia anterior?"}
+  C -->|no| X["estado = rechazada<br/>se borra el temporal<br/>se conserva la copia anterior"]
+  C -->|sí| OK["reemplaza al original<br/>actualiza el manifiesto<br/>estado = ok"]
+  E & X & OK --> REP["data/reports/extraccion.json<br/>estado por fuente"]
+  REP --> T["TRANSFORM · LOAD · WEB<br/>con las copias buenas"]
+  T --> S{"¿Alguna fuente falló?"}
+  S -->|sí| C2["código de salida 2<br/>aviso en el log y en la página"]
+  S -->|no| C0["código de salida 0"]
+```
+
+| Capa | Qué protege | Dónde |
+|---|---|---|
+| Reintentos HTTP (4, con espera creciente ante 429 y 5xx) | Errores momentáneos del servidor | `common.http_session` |
+| Descarga reanudable a `.part` | Cortes de red a mitad de un archivo grande (pasó en la V1 a los 38 MB) | `extract._stream` |
+| Selenium y datastore paginado de MEData | Cambios en la API de metadatos o en el enlace de descarga | `_metadata_selenium`, `_datastore_dump` |
+| Archivo temporal + validación | Que un archivo a medias, vacío o recortado reemplace al bueno. Umbral configurable en `config.yaml › validacion.min_proporcion` | `contar_filas_csv`, `validar` |
+| Aislamiento por fuente | Una fuente caída no detiene a las demás | `run_extract` |
+| Reporte y código de salida 2 | Que una corrida programada con fuentes viejas pase inadvertida: el Programador de tareas de Windows muestra el resultado 2 y la página avisa en el encabezado y en el capítulo 4 | `data/reports/extraccion.json` |
+| Copias de `data/raw` | Borrado, daño o pérdida del disco: 3 copias comprimidas rotativas, más una copia externa opcional (`respaldo.copia_externa`, p. ej. una carpeta de OneDrive) | `etl/respaldo.py` |
+| Datos de la página en git | Volver a una versión publicada anterior; GitHub Pages sigue mostrando la última buena | `web/data/*.js` |
+
+**Respaldos disponibles, de más a menos reciente:** la última copia buena en `data/raw`; las 3 copias en `data/backups`
+(y en la carpeta externa si se configuró); los datos publicados en git (`web/data`, con todo su historial); y las fuentes
+originales (MEData, GeoMedellín, datos.gov.co, SIATA). Para recuperar: `python -m etl restaurar` y luego `python -m etl transform`.
 
 ---
 
