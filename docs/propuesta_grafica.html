@@ -1,0 +1,242 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="dark">
+<title>Propuesta gráfica</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;700&display=swap">
+<link rel="stylesheet" href="../web/css/app.css">
+<style>
+  main { display: flex; flex-direction: column; gap: 26px; }
+  .demo-grid { display: grid; gap: 16px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 380px), 1fr)); }
+  .stage { background: var(--bg); border: 1px solid var(--line); min-height: 170px; display: grid; place-items: center; padding: 16px; position: relative; overflow: hidden; }
+  .meta-demo { display: flex; gap: 8px; flex-wrap: wrap; font-size: 12.5px; }
+  .meta-demo span { border: 1px solid var(--line); padding: 2px 8px; color: var(--muted); }
+  .meta-demo .hecho { color: var(--fg); border-color: var(--fg); }
+  .meta-demo .alta { color: var(--accent); border-color: var(--accent); }
+  .btn.sm { padding: 5px 10px; font-size: 13px; }
+
+  /* 1 · logo */
+  .logo-x { cursor: pointer; }
+  .logo-x .via { stroke-dasharray: 160; stroke-dashoffset: 160; transition: stroke-dashoffset .9s ease; }
+  .logo-x .carro { opacity: 0; }
+  .logo-x:hover .via, .logo-x.on .via { stroke-dashoffset: 0; }
+  .logo-x:hover .carro, .logo-x.on .carro { opacity: 1; }
+  .logo-x .cuadro { transition: transform .5s ease; transform-origin: 20px 60px; }
+  .logo-x:hover .cuadro, .logo-x.on .cuadro { transform: rotate(45deg) scale(.8); }
+  .semaforo { display: flex; gap: 6px; } .semaforo i { width: 18px; height: 18px; background: #2B2D33; }
+  .semaforo i { animation: sem 1.8s infinite; } .semaforo i:nth-child(2) { animation-delay: .6s; } .semaforo i:nth-child(3) { animation-delay: 1.2s; }
+  @keyframes sem { 0%, 30% { background: #F0F0F0; } 33%, 100% { background: #2B2D33; } }
+  .semaforo i:nth-child(3) { animation-name: semr; } @keyframes semr { 0%, 30% { background: #E53945; } 33%, 100% { background: #2B2D33; } }
+
+  /* 3 · medidor */
+  .gauge { display: flex; flex-direction: column; gap: 10px; width: 100%; max-width: 360px; }
+  .gauge .seg4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 3px; height: 16px; }
+  .gauge .seg4 i { background: #2B2D33; transition: background .3s; }
+  .gauge .seg4 i.on1 { background: #5A5D66; } .gauge .seg4 i.on2 { background: #B9BBC2; } .gauge .seg4 i.on3 { background: #FF6B73; } .gauge .seg4 i.on4 { background: #E53945; }
+  .gauge .aguja { position: relative; height: 10px; } .gauge .aguja b { position: absolute; top: 0; width: 2px; height: 14px; background: var(--fg); left: 0; transition: left 1s cubic-bezier(.2, .8, .2, 1); }
+  .gauge .val { font: 700 40px/1 var(--font-head); color: var(--accent); }
+
+  /* 7 · clima */
+  .clima-demo { width: 100%; height: 150px; position: relative; display: grid; place-items: center; }
+  .gota { position: absolute; top: -12px; width: 1.5px; height: 12px; background: #B9BBC2; opacity: .7; animation: caer linear infinite; }
+  @keyframes caer { to { transform: translateY(190px); } }
+  .sol { width: 46px; height: 46px; border: 2px solid var(--fg); border-radius: 50%; animation: girar 12s linear infinite; position: relative; }
+  .sol::before { content: ""; position: absolute; inset: -14px; border: 2px dashed #5A5D66; border-radius: 50%; }
+  @keyframes girar { to { transform: rotate(360deg); } }
+
+  /* 8 · pulso */
+  .pulso { width: 14px; height: 14px; background: var(--accent); position: relative; }
+  .pulso::after { content: ""; position: absolute; inset: -2px; border: 2px solid var(--accent); animation: onda 1.8s ease-out infinite; }
+  @keyframes onda { from { transform: scale(1); opacity: 1; } to { transform: scale(3.4); opacity: 0; } }
+
+  /* 9 · iconos */
+  .medios { display: grid; grid-template-columns: repeat(4, 1fr); width: 100%; max-width: 420px; }
+  .medios button { border: 1px solid var(--line); margin-left: -1px; background: var(--bg); color: var(--fg); padding: 10px 4px 8px; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 4px; font: 500 13px var(--font); }
+  .medios button svg { width: 34px; height: 24px; transition: transform .25s; }
+  .medios button:hover svg { transform: translateX(3px); }
+  .medios button.on { background: var(--accent); color: #08090B; border-color: var(--accent); }
+
+  /* 11 · esqueleto */
+  .carga { width: 100%; max-width: 360px; display: flex; flex-direction: column; gap: 10px; }
+  .carga .camino { height: 6px; background: repeating-linear-gradient(90deg, #F0F0F0 0 22px, transparent 22px 40px); animation: avanzar .8s linear infinite; }
+  @keyframes avanzar { to { background-position: 40px 0; } }
+  .carga .sk { height: 14px; background: linear-gradient(90deg, #191B20, #2B2D33, #191B20); background-size: 200% 100%; animation: brillo 1.4s infinite; }
+  @keyframes brillo { to { background-position: -200% 0; } }
+
+  /* 12 · línea de tiempo de los puntos */
+  .anios { display: flex; gap: 4px; flex-wrap: wrap; } .anios button { font: 500 12px var(--font); padding: 3px 7px; }
+  .puntos-demo { display: grid; grid-template-columns: repeat(auto-fill, 4px); gap: 2px; width: 100%; }
+  .puntos-demo i { width: 4px; height: 4px; border-radius: 50%; background: #F0F0F0; opacity: .25; transition: opacity .3s, background .3s; }
+  .puntos-demo i.on { opacity: 1; background: var(--accent); }
+  @media (prefers-reduced-motion: reduce) { .gota, .sol, .pulso::after, .carga .camino, .carga .sk, .semaforo i { animation: none !important; } }
+</style>
+</head>
+<body>
+<header class="top"><div class="in"><a class="brand" href="../web/index.html"><span class="logo"></span>Ruta Segura Medellín</a>
+  <span class="meta">Propuesta gráfica · para el equipo</span></div></header>
+<main>
+  <div class="head">
+    <h1>Propuesta de elementos gráficos</h1>
+    <p class="lede">Doce elementos para que la página sea más amable sin perder el tono editorial actual (negro, gris, rojo solo para la
+      fatalidad, formas cuadradas). Cada uno está funcionando abajo: pasa el cursor o haz clic. Todos respetan la opción del sistema
+      «reducir movimiento».</p>
+    <div class="meta-demo"><span class="hecho">Ya en la página</span><span class="alta">Prioridad alta</span><span>Prioridad media</span></div>
+  </div>
+
+  <div class="demo-grid">
+    <!-- 1 -->
+    <div class="card"><h3>1 · Logo interactivo: el cuadro se vuelve ruta</h3>
+      <div class="stage"><svg class="logo-x" id="logo" viewBox="0 0 200 100" width="260" aria-label="Logo Ruta Segura">
+        <path class="via" d="M20 60 C 60 60, 70 25, 110 30 S 170 70, 185 40" fill="none" stroke="#F0F0F0" stroke-width="3" stroke-dasharray="4 0"/>
+        <rect class="cuadro" x="12" y="52" width="16" height="16" fill="#E53945"/>
+        <circle class="carro" r="4" fill="#F0F0F0"><animateMotion dur="2.4s" repeatCount="indefinite" path="M20 60 C 60 60, 70 25, 110 30 S 170 70, 185 40"/></circle>
+        <rect x="181" y="36" width="8" height="8" fill="#F0F0F0"/></svg></div>
+      <p class="note">El cuadrado rojo del logo actual gira 45° como señal de tránsito y traza una vía hasta el destino. Se activa al pasar
+        el cursor por la marca y mientras se calcula una ruta (estado de carga con identidad propia).</p>
+      <div class="meta-demo"><span class="alta">Alta</span><span>Encabezado · Módulo 2</span><span>~2 h</span></div></div>
+    <!-- 2 -->
+    <div class="card"><h3>2 · La ruta se dibuja y un punto la recorre</h3>
+      <div class="stage"><svg viewBox="0 0 300 120" width="100%"><path id="r2" d="M10 100 L60 90 L80 50 L150 40 L190 70 L250 60 L290 20" fill="none" stroke="#5A5D66" stroke-width="2"/>
+        <path id="r2b" d="M10 100 L60 90 L80 50 L150 40 L190 70 L250 60 L290 20" fill="none" stroke="#F0F0F0" stroke-width="4" stroke-dasharray="400" stroke-dashoffset="400"/>
+        <rect x="146" y="36" width="8" height="8" fill="#E53945"/><text x="158" y="34" font-size="10" fill="#B4B6BE">tramo crítico</text>
+        <circle r="4.5" fill="#F0F0F0" id="punto2"><animateMotion id="mov2" dur="3s" begin="indefinite" fill="freeze" path="M10 100 L60 90 L80 50 L150 40 L190 70 L250 60 L290 20"/></circle></svg></div>
+      <button class="btn sm" id="b2">Calcular de nuevo</button>
+      <p class="note">Al calcular, la ruta elegida se traza de origen a destino y los tramos críticos aparecen en el orden del recorrido. Hace
+        visible que el riesgo se calcula sobre <i>esa</i> vía.</p>
+      <div class="meta-demo"><span class="alta">Alta</span><span>Módulo 2 (Leaflet + CSS)</span><span>~3 h</span></div></div>
+    <!-- 3 -->
+    <div class="card"><h3>3 · Medidor de riesgo por niveles</h3>
+      <div class="stage"><div class="gauge"><div class="seg4" id="g4"><i></i><i></i><i></i><i></i></div>
+        <div class="aguja"><b id="gag"></b></div><div><span class="val" id="gval">0,00 %</span> <span class="muted small" id="gniv"></span></div></div></div>
+      <div class="meta-demo" style="gap:4px"><button class="btn sm" data-g="0">Bajo</button><button class="btn sm" data-g="1">Medio</button>
+        <button class="btn sm" data-g="2">Alto</button><button class="btn sm" data-g="3">Muy alto</button></div>
+      <p class="note">Reemplaza la etiqueta plana del nivel por una barra de 4 segmentos que se llena y una aguja que se desliza, con el
+        número contando hasta la probabilidad. Se entiende sin leer.</p>
+      <div class="meta-demo"><span class="alta">Alta</span><span>Módulo 2</span><span>~2 h</span></div></div>
+    <!-- 4 -->
+    <div class="card"><h3>4 · Pictograma «1.000 personas»</h3>
+      <div class="stage"><div class="picto" style="width:100%"></div></div>
+      <p class="note">Ya está en el módulo 1: de cada 1.000 víctimas que se mueven como tú, se encienden en rojo las que mueren (5 en moto,
+        28 a pie). Convierte una tasa en personas.</p>
+      <div class="meta-demo"><span class="hecho">Implementado</span><span>Módulo 1</span></div></div>
+    <!-- 5 -->
+    <div class="card"><h3>5 · Reloj de 24 horas</h3>
+      <div class="stage"><p class="muted small" style="text-align:center">Barras radiales por hora con el pico al centro y la madrugada (más letal)
+        marcada con un arco rojo. <a href="../web/index.html#diagnostico">Verlo en el módulo 1 →</a></p></div>
+      <p class="note">El reloj es una metáfora directa de «¿a qué hora salgo?». Siguiente paso: que el usuario arrastre una manecilla y se
+        actualice la probabilidad de su ruta.</p>
+      <div class="meta-demo"><span class="hecho">Implementado</span><span>Módulo 1 → Módulo 2</span></div></div>
+    <!-- 6 -->
+    <div class="card"><h3>6 · Contadores y tendencias que se dibujan</h3>
+      <div class="stage"><div style="text-align:center"><b id="cnt" style="font:700 54px/1 var(--font-head);color:var(--accent)">0</b>
+        <p class="muted small">siniestros con heridos en 2025</p></div></div>
+      <button class="btn sm" id="b6">Repetir</button>
+      <p class="note">La portada ya cuenta las muertes. Proponemos usar el mismo gesto (contar al entrar en pantalla) en las cifras grandes de
+        los módulos y en la tendencia del módulo 1, cuya línea ya se dibuja.</p>
+      <div class="meta-demo"><span class="hecho">Parcial</span><span>Todos los módulos</span><span>~1 h</span></div></div>
+    <!-- 7 -->
+    <div class="card"><h3>7 · Clima vivo en la tarjeta</h3>
+      <div class="stage"><div class="clima-demo" id="clima"></div></div>
+      <div class="meta-demo" style="gap:4px"><button class="btn sm" id="b7l">Llueve (SIATA)</button><button class="btn sm" id="b7s">Sin lluvia</button></div>
+      <p class="note">Si SIATA reporta lluvia cerca de la ruta, caen gotas finas sobre la tarjeta del clima; si no, un sol lineal o una luna
+        de noche. Refuerza la recomendación sin agregar texto.</p>
+      <div class="meta-demo"><span>Media</span><span>Módulo 2</span><span>~1,5 h</span></div></div>
+    <!-- 8 -->
+    <div class="card"><h3>8 · Pulso en los puntos críticos</h3>
+      <div class="stage"><div style="display:flex;gap:46px"><div class="pulso"></div><div class="pulso" style="animation-delay:.6s"></div></div></div>
+      <p class="note">Los 3 tramos más siniestrados de la ruta y el top 3 de «dónde intervenir» laten en el mapa. Guía la mirada hacia lo
+        importante entre cientos de marcadores.</p>
+      <div class="meta-demo"><span>Media</span><span>Mapas de los módulos 2 y 3</span><span>~1 h</span></div></div>
+    <!-- 9 -->
+    <div class="card"><h3>9 · Íconos lineales de medio de transporte</h3>
+      <div class="stage"><div class="medios" id="medios">
+        <button class="on"><svg viewBox="0 0 40 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="8" cy="17" r="5"/><circle cx="32" cy="17" r="5"/><path d="M8 17h10l6-8h5l3 8M18 9h6"/></svg>Moto</button>
+        <button><svg viewBox="0 0 40 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 16v-5l5-6h20l6 6h3v5z"/><circle cx="11" cy="17" r="3"/><circle cx="29" cy="17" r="3"/></svg>Carro</button>
+        <button><svg viewBox="0 0 40 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="16" r="6"/><circle cx="31" cy="16" r="6"/><path d="M9 16l7-9h9l6 9M16 7l5 9h10"/></svg>Bici</button>
+        <button><svg viewBox="0 0 40 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="20" cy="4" r="2.5"/><path d="M20 8v7l-4 7M20 15l4 7M14 12l6-4 6 4"/></svg>A pie</button></div></div>
+      <p class="note">Mismos botones segmentados de hoy, con un ícono de línea que se desplaza al pasar el cursor. Se entienden sin leer y
+        unifican los módulos 1 y 2.</p>
+      <div class="meta-demo"><span class="alta">Alta</span><span>Módulos 1 y 2</span><span>~1 h</span></div></div>
+    <!-- 10 -->
+    <div class="card"><h3>10 · Entradas suaves al hacer scroll</h3>
+      <div class="stage"><div id="rev" style="display:flex;gap:10px"></div></div>
+      <button class="btn sm" id="b10">Repetir</button>
+      <p class="note">Las tarjetas aparecen una tras otra al entrar en pantalla (ya en el módulo 1). Proponemos extenderlo a los módulos 2 a 4
+        y a la portada, con el mismo ritmo.</p>
+      <div class="meta-demo"><span class="hecho">Implementado en el módulo 1</span><span>~30 min el resto</span></div></div>
+    <!-- 11 -->
+    <div class="card"><h3>11 · Esqueleto de carga «calculando ruta»</h3>
+      <div class="stage"><div class="carga"><div class="camino"></div><div class="sk" style="width:70%"></div><div class="sk"></div><div class="sk" style="width:45%"></div></div></div>
+      <p class="note">Mientras OSRM y SIATA responden, la tarjeta muestra líneas de carril que avanzan y bloques grises donde aparecerán los
+        resultados. Evita la sensación de página congelada.</p>
+      <div class="meta-demo"><span>Media</span><span>Módulo 2</span><span>~1 h</span></div></div>
+    <!-- 12 -->
+    <div class="card"><h3>12 · Los puntos de la portada, año por año</h3>
+      <div class="stage" style="display:flex;flex-direction:column;gap:10px;align-items:stretch">
+        <div class="anios" id="anios"></div><div class="puntos-demo" id="pdemo"></div><p class="note" id="pnota"></p></div>
+      <p class="note">Hoy cada punto de la portada es una persona fallecida. Al pasar por un año se encienden en rojo las de ese año: el visitante
+        «lee» la serie sin un gráfico. Datos reales del SISC.</p>
+      <div class="meta-demo"><span class="alta">Alta</span><span>Portada</span><span>~1,5 h</span></div></div>
+  </div>
+  <p class="small muted">Recomendación de orden: 1, 3, 9 y 12 (identidad y comprensión inmediata), luego 2 y 11 (feedback en la consulta) y
+    al final 7, 8 y 6 (ambiente). Todo con CSS y SVG, sin librerías nuevas.</p>
+</main>
+<script src="../web/data/diagnostico.js"></script>
+<script src="../web/js/util.js"></script>
+<script>
+const red = U.reducir();
+// 1
+const logo = document.getElementById('logo');
+logo.addEventListener('click', () => logo.classList.toggle('on'));
+if (!red) setInterval(() => { if (!logo.matches(':hover')) logo.classList.toggle('on'); }, 2600); else logo.classList.add('on');
+// 2
+const r2 = document.getElementById('r2b');
+function dibujar() { r2.style.transition = 'none'; r2.style.strokeDashoffset = 400; r2.getBoundingClientRect(); r2.style.transition = red ? 'none' : 'stroke-dashoffset 1.6s ease-out'; r2.style.strokeDashoffset = 0; if (!red) setTimeout(() => document.getElementById('mov2').beginElement(), 1600); }
+document.getElementById('b2').onclick = dibujar; dibujar();
+// 3
+const NIV = ['Bajo', 'Medio', 'Alto', 'Muy alto'], PV = [0.05, 0.18, 0.4, 0.87];
+function gauge(n) {
+  document.querySelectorAll('#g4 i').forEach((i, k) => (i.className = k <= n ? 'on' + (k + 1) : ''));
+  document.getElementById('gag').style.left = `calc(${(n + 0.5) * 25}% - 1px)`;
+  document.getElementById('gniv').textContent = 'Riesgo ' + NIV[n].toLowerCase();
+  const el = document.getElementById('gval'), meta = PV[n], t0 = performance.now();
+  (function paso(t) { const p = red ? 1 : Math.min(1, (t - t0) / 900); el.textContent = U.n2(meta * (1 - Math.pow(1 - p, 3))) + ' %'; if (p < 1) requestAnimationFrame(paso); })(t0);
+}
+document.querySelectorAll('[data-g]').forEach((b) => (b.onclick = () => gauge(+b.dataset.g))); gauge(3);
+// 4
+const pic = document.querySelector('.card:nth-child(4) .picto'); let h4 = '';
+for (let i = 0; i < 1000; i++) h4 += `<i class="${i < 28 ? 'm' : ''}" style="--d:${(i % 50) * 8}ms"></i>`; pic.innerHTML = h4;
+// 6
+function contar() { const el = document.getElementById('cnt'), s = RSM.diagnostico.serie, meta = (s[s.length - 1].con_heridos || 0) + (s[s.length - 1].con_muertos || 0), t0 = performance.now();
+  (function paso(t) { const p = red ? 1 : Math.min(1, (t - t0) / 1400); el.textContent = U.n0(meta * (1 - Math.pow(1 - p, 3))); if (p < 1) requestAnimationFrame(paso); })(t0); }
+document.getElementById('b6').onclick = contar; contar();
+// 7
+const cl = document.getElementById('clima');
+function lluvia(si) {
+  cl.innerHTML = '';
+  if (!si) { cl.innerHTML = '<div class="sol"></div>'; return; }
+  for (let i = 0; i < 40; i++) { const g = document.createElement('i'); g.className = 'gota'; g.style.left = Math.random() * 100 + '%';
+    g.style.animationDuration = 0.6 + Math.random() * 0.5 + 's'; g.style.animationDelay = -Math.random() + 's'; cl.append(g); }
+  cl.insertAdjacentHTML('beforeend', '<b style="font:700 22px var(--font-head);z-index:1">Lloviendo cerca de tu ruta</b>');
+}
+document.getElementById('b7l').onclick = () => lluvia(true); document.getElementById('b7s').onclick = () => lluvia(false); lluvia(true);
+// 9
+document.getElementById('medios').addEventListener('click', (e) => { const b = e.target.closest('button'); if (!b) return;
+  document.querySelectorAll('#medios button').forEach((x) => x.classList.toggle('on', x === b)); });
+// 10
+function revelar() { const box = document.getElementById('rev'); box.innerHTML = '';
+  for (let i = 0; i < 4; i++) { const c = document.createElement('div'); c.className = 'reveal'; c.style.cssText = 'width:60px;height:70px;border:1px solid var(--line);background:var(--panel)';
+    c.style.transitionDelay = i * 120 + 'ms'; box.append(c); requestAnimationFrame(() => requestAnimationFrame(() => c.classList.add('in'))); } }
+document.getElementById('b10').onclick = revelar; revelar();
+// 12
+const serie = RSM.diagnostico.serie.filter((r) => r.muertes_sisc), pd = document.getElementById('pdemo'), an = document.getElementById('anios');
+const frag = document.createDocumentFragment(); serie.forEach((r) => { for (let i = 0; i < r.muertes_sisc; i++) { const d = document.createElement('i'); d.dataset.a = r.anio; frag.append(d); } }); pd.append(frag);
+serie.forEach((r) => { const b = document.createElement('button'); b.className = 'btn sm'; b.textContent = r.anio;
+  b.onmouseenter = b.onclick = () => { pd.querySelectorAll('i').forEach((i) => i.classList.toggle('on', +i.dataset.a === r.anio));
+    document.getElementById('pnota').textContent = `${r.anio}: ${U.n0(r.muertes_sisc)} personas fallecidas en las vías (SISC).`; }; an.append(b); });
+an.lastChild.onclick();
+</script>
+</body>
+</html>

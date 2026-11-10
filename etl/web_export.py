@@ -82,6 +82,17 @@ def _vista_unificada(con, corte: str) -> None:
     # usan solo siniestros con heridos o muertos (estables en todo el periodo).
     con.execute("""CREATE OR REPLACE TEMP VIEW uh AS
                    SELECT * FROM u WHERE gravedad_incidente IN ('Con heridos', 'Con muertos')""")
+    # Dirección y comuna representativas de cada celda de ~110 m. La moda estadística elige al azar entre empates;
+    # aquí se desempata por orden alfabético para que dos corridas generen exactamente los mismos archivos.
+    hd = 0.001
+    con.execute(f"""CREATE OR REPLACE TEMP TABLE etiqueta_celda AS
+        WITH d AS (SELECT FLOOR(latitud/{hd}) gi, FLOOR(longitud/{hd}) gj, direccion, COUNT(*) n FROM uh
+                   WHERE latitud IS NOT NULL AND direccion IS NOT NULL GROUP BY ALL),
+             c AS (SELECT FLOOR(latitud/{hd}) gi, FLOOR(longitud/{hd}) gj, comuna_geo, COUNT(*) n FROM uh
+                   WHERE latitud IS NOT NULL AND comuna_geo IS NOT NULL GROUP BY ALL),
+             d1 AS (SELECT gi, gj, FIRST(direccion ORDER BY n DESC, direccion) dir FROM d GROUP BY 1, 2),
+             c1 AS (SELECT gi, gj, FIRST(comuna_geo ORDER BY n DESC, comuna_geo) comuna FROM c GROUP BY 1, 2)
+        SELECT * FROM d1 FULL JOIN c1 USING (gi, gj)""")
     con.execute(f"""
     CREATE OR REPLACE TEMP VIEW muertes AS
     SELECT latitud, longitud, fecha_hora, 1 AS n FROM fact_incidente
@@ -129,7 +140,7 @@ def diagnostico(con, cfg) -> dict:
                           FROM fact_victima WHERE actor_vial IS NOT NULL GROUP BY 1 ORDER BY 2 DESC""")
     actores["letalidad_x1000"] = 1000 * actores["muertos"] / actores["victimas"]
     edad = _df(con, """SELECT grupo_edad, sexo, COUNT(*) n FROM fact_victima
-                       WHERE grupo_edad IS NOT NULL AND sexo IS NOT NULL GROUP BY ALL ORDER BY 1""")
+                       WHERE grupo_edad IS NOT NULL AND sexo IS NOT NULL GROUP BY ALL ORDER BY 1, 2""")
     clase = _df(con, """SELECT clase_incidente AS clase, COUNT(*) n,
                            SUM((gravedad_incidente='Con muertos')::INT) con_muertos,
                            SUM((gravedad_incidente='Con heridos')::INT) con_heridos
@@ -257,7 +268,7 @@ def grilla(con, cfg) -> dict:
         SELECT COALESCE(s.i,m.i,v.i) i, COALESCE(s.j,m.j,v.j) j, COALESCE(tot,0) tot,
                COALESCE(mue,0) mue, COALESCE(moto,0) moto, COALESCE(peat,0) peat, COALESCE(bici,0) bici,
                COALESCE(veh,0) veh
-        FROM s FULL JOIN m USING (i,j) FULL JOIN v USING (i,j)""")
+        FROM s FULL JOIN m USING (i,j) FULL JOIN v USING (i,j) ORDER BY i, j""")
     # referencia: media del bloque 3×3 alrededor de cada celda con registros (incluye celdas vacías vecinas,
     # igual que el corredor de una ruta) → umbrales de nivel
     idx = {(r.i, r.j): r.tot for r in cel.itertuples() if r.tot > 0}
@@ -275,10 +286,10 @@ def grilla(con, cfg) -> dict:
 
     hot = _df(con, f"""
         SELECT ROUND(AVG(latitud),5) lat, ROUND(AVG(longitud),5) lon, COUNT(*) tot,
-               MODE(direccion) dir, MODE(comuna_geo) comuna
-        FROM uh WHERE latitud IS NOT NULL
+               ANY_VALUE(e.dir) dir, ANY_VALUE(e.comuna) comuna
+        FROM uh LEFT JOIN etiqueta_celda e ON e.gi = FLOOR(uh.latitud/{cfg['web']['hotspot_deg']}) AND e.gj = FLOOR(uh.longitud/{cfg['web']['hotspot_deg']}) WHERE latitud IS NOT NULL
         GROUP BY FLOOR(latitud/{cfg['web']['hotspot_deg']}), FLOOR(longitud/{cfg['web']['hotspot_deg']})
-        HAVING COUNT(*) >= 15 ORDER BY tot DESC LIMIT 600""")
+        HAVING COUNT(*) >= 15 ORDER BY tot DESC, lat, lon LIMIT 600""")
     return {
         "deg": g, "lat0": lat0, "lon0": lon0, "anios": anios, "desde": d0, "hasta": d1,
         "base": "siniestros con heridos o muertos (MEData 2014-07→2020-08 + GeoMedellín 2020-09→2025)",
@@ -351,14 +362,14 @@ def intervencion(con, cfg) -> dict:
         WITH c AS (
           SELECT FLOOR(latitud/{h}) gi, FLOOR(longitud/{h}) gj, ROUND(AVG(latitud),5) lat, ROUND(AVG(longitud),5) lon,
                  COUNT(*) siniestros, SUM((gravedad_incidente IN ('Con heridos','Con muertos'))::INT) con_heridos,
-                 MODE(direccion) dir, MODE(comuna_geo) comuna, MIN(dist_m_camara_cctv) dist_cctv,
+                 ANY_VALUE(e.dir) dir, ANY_VALUE(e.comuna) comuna, MIN(dist_m_camara_cctv) dist_cctv,
                  SUM((anio >= 2023)::INT) ultimos_3
-          FROM uh WHERE latitud IS NOT NULL AND anio >= 2019 GROUP BY 1,2),
+          FROM uh LEFT JOIN etiqueta_celda e ON e.gi = FLOOR(uh.latitud/{h}) AND e.gj = FLOOR(uh.longitud/{h}) WHERE latitud IS NOT NULL AND anio >= 2019 GROUP BY 1,2),
         m AS (SELECT FLOOR(latitud/{h}) gi, FLOOR(longitud/{h}) gj, SUM(n) muertes FROM muertes
               WHERE latitud IS NOT NULL AND YEAR(fecha_hora) >= 2019 GROUP BY 1,2)
         SELECT c.*, COALESCE(m.muertes,0) muertes, c.con_heridos + 10*COALESCE(m.muertes,0) puntaje
         FROM c LEFT JOIN m USING (gi,gj)
-        WHERE c.dist_cctv > 300 ORDER BY puntaje DESC LIMIT 25""")
+        WHERE c.dist_cctv > 300 ORDER BY puntaje DESC, con_heridos DESC, lat, lon LIMIT 25""")
     top = top.drop(columns=["gi", "gj"])
     sin_cctv = _df(con, """
         SELECT codigo_comuna_geo cod, ANY_VALUE(comuna_geo) comuna, COUNT(*) siniestros
@@ -410,6 +421,38 @@ def calidad(cfg) -> dict:
 
 
 # ----------------------------------------------------------------------------- meta
+# ----------------------------------------------------------------------------- página del jurado
+def jurado(con, cfg) -> dict:
+    """Datos más finos para la página técnica (simuladores y comportamiento temporal). Siguen siendo agregados."""
+    h = cfg["web"]["hotspot_deg"]
+    anios = [r[0] for r in con.execute("SELECT DISTINCT anio FROM uh ORDER BY 1").fetchall()]
+    piv = ", ".join(f"SUM((anio = {a})::INT) AS a{a}" for a in anios)
+    pa = _df(con, f"""
+        SELECT ROUND(AVG(latitud),5) lat, ROUND(AVG(longitud),5) lon, ANY_VALUE(e.dir) dir, ANY_VALUE(e.comuna) comuna,
+               COUNT(*) tot, {piv}
+        FROM uh LEFT JOIN etiqueta_celda e ON e.gi = FLOOR(uh.latitud/{h}) AND e.gj = FLOOR(uh.longitud/{h}) WHERE latitud IS NOT NULL
+        GROUP BY FLOOR(latitud/{h}), FLOOR(longitud/{h}) ORDER BY tot DESC, lat, lon LIMIT 400""")
+    puntos_anio = [[r["lat"], r["lon"], r["dir"], r["comuna"], [int(r[f"a{a}"]) for a in anios]]
+                   for r in pa.to_dict("records")]
+    # celdas de ~110 m con siniestros con heridos 2019-2025: base de los simuladores de cámaras y priorización
+    cel = _df(con, f"""
+        WITH c AS (SELECT FLOOR(latitud/{h}) gi, FLOOR(longitud/{h}) gj, ROUND(AVG(latitud),5) lat,
+                          ROUND(AVG(longitud),5) lon, COUNT(*) n, ANY_VALUE(e.dir) dir
+                   FROM uh LEFT JOIN etiqueta_celda e ON e.gi = FLOOR(uh.latitud/{h}) AND e.gj = FLOOR(uh.longitud/{h}) WHERE latitud IS NOT NULL AND anio >= 2019 GROUP BY 1,2),
+             m AS (SELECT FLOOR(latitud/{h}) gi, FLOOR(longitud/{h}) gj, SUM(n) mue FROM muertes
+                   WHERE latitud IS NOT NULL AND YEAR(fecha_hora) >= 2019 GROUP BY 1,2)
+        SELECT c.lat, c.lon, c.n, COALESCE(m.mue,0) mue, c.dir FROM c LEFT JOIN m USING (gi,gj) ORDER BY c.n DESC, c.lat, c.lon""")
+    celdas = [[r.lat, r.lon, int(r.n), int(r.mue), r.dir if r.n >= 20 else None] for r in cel.itertuples()]
+    mensual = _df(con, """SELECT strftime(fecha_hora, '%Y-%m') mes, COUNT(*) heridos, ANY_VALUE(fuente) fuente
+                          FROM uh GROUP BY 1 ORDER BY 1""")
+    cctv = _df(con, "SELECT ROUND(latitud,6) lat, ROUND(longitud,6) lon FROM dim_camara "
+                    "WHERE tipo_camara='CCTV' AND latitud IS NOT NULL")
+    return {"anios": anios, "puntos_anio": puntos_anio, "celdas_2019_2025": celdas,
+            "celdas_campos": ["lat", "lon", "siniestros_heridos", "muertes", "direccion"],
+            "mensual": mensual.to_dict("records"), "cctv": cctv.values.tolist(),
+            "corte_medata": cfg["web"]["corte_medata"]}
+
+
 def meta(con, cfg) -> dict:
     man_p = cfg["paths"]["raw"] / "_manifest.json"
     man = json.loads(man_p.read_text(encoding="utf-8")) if man_p.exists() else {}
@@ -446,6 +489,7 @@ def run_web(cfg: dict) -> dict:
         tam["clima"] = _write(out, "clima", clima(con, cfg, cfg["paths"]["raw"]))
         tam["intervencion"] = _write(out, "intervencion", intervencion(con, cfg))
         tam["calidad"] = _write(out, "calidad", calidad(cfg))
+        tam["jurado"] = _write(out, "jurado", jurado(con, cfg))
         tam["meta"] = _write(out, "meta", meta(con, cfg))
     finally:
         con.close()

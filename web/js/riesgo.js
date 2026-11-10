@@ -73,10 +73,10 @@
   /**
    * @param coords   [[lon,lat],...] de la ruta
    * @param grilla   RSM.grilla
-   * @param opts     {fecha: Date, duracionMin: number, lluvia: bool}
+   * @param opts     {fecha: Date, duracionMin: number, lluvia: bool, radio?: m (40), rr?: razón de lluvia}
    */
   function evaluar(coords, grilla, opts) {
-    const { celdas, largo } = corredor(coords, grilla);
+    const { celdas, largo } = corredor(coords, grilla, opts.radio || 40);
     let sin = 0, mue = 0, moto = 0, peat = 0, bici = 0, veh = 0;
     for (const c of celdas.values()) {
       if (!c) continue;
@@ -89,8 +89,9 @@
     const dia = (f.getDay() + 6) % 7; // lunes = 0
     const hora = f.getHours();
     let fLluvia = 1;
-    if (opts.lluvia && grilla.rr_lluvia && grilla.p_horas_lluvia != null) {
-      const p = grilla.p_horas_lluvia, rr = grilla.rr_lluvia;
+    const rrL = opts.rr ?? grilla.rr_lluvia; // opts.rr permite simular otra razón de lluvia (página del jurado)
+    if (opts.lluvia && rrL && grilla.p_horas_lluvia != null) {
+      const p = grilla.p_horas_lluvia, rr = rrL;
       fLluvia = rr / (p * rr + (1 - p)); // pasa de la tasa promedio a la tasa en horas con lluvia
     }
     const lambdaHora = (anual / 365) * (7 * grilla.perfil_dia[dia]) * grilla.perfil_hora[hora] * fLluvia;

@@ -216,11 +216,13 @@ ruta-segura-medellin/
 │   └── camaras.py             ← colector de fotos CCTV (YOLOv8 opcional)
 ├── web/
 │   ├── index.html             ← página: inicio + 4 módulos
+│   ├── jurado.html            ← página técnica para el jurado (validación, calidad, simuladores)
 │   ├── css/app.css
 │   ├── js/                    ← util · riesgo · diagnostico · ruta · intervencion · datos · app
 │   └── data/*.js              ← generado por el pipeline (se publica)
 ├── docs/
 │   ├── ejemplo_funcionamiento.html   ← cálculo de riesgo paso a paso (interactivo)
+│   ├── propuesta_grafica.html        ← propuesta de elementos gráficos (demos en vivo)
 │   └── img/                   ← capturas
 ├── tests/                     ← 20 pruebas con muestras reales (pytest)
 └── data/                      ← generado: raw · clean · quarantine · warehouse · reports
@@ -393,10 +395,11 @@ viaje**. **No** es la probabilidad de que el usuario tenga un accidente: para es
 | Módulo | Qué responde | Cómo se usa | Valor para la decisión |
 |---|---|---|---|
 | **Inicio** | Mensaje central y 3 hallazgos | Leer y elegir un módulo | Entender en 10 segundos |
-| **1 · ¿Qué está pasando?** | Evolución anual, hora × día, factores influyentes (tipo de día, temporada, lluvia, hora pico, franja, actor), víctimas por edad y sexo, mapa de puntos críticos, comunas | Pasar el cursor sobre las gráficas y el mapa | Saber cuándo y dónde se concentra el riesgo y quiénes son las víctimas |
+| **1 · ¿Qué está pasando?** | Versión para el ciudadano: ¿va mejorando o empeorando?, ¿qué tan grave es un siniestro según cómo me muevo? (pictograma de 1.000 personas), ¿a qué hora y qué días hay más riesgo? (reloj de 24 h), mi comuna frente a la ciudad, dónde tener cuidado, la lluvia y 3 consejos | Elegir medio de transporte y comuna (se recuerda en el navegador) | Saber qué le afecta a uno, en un minuto. El detalle técnico pasó a la página del jurado |
 | **2 · Consulta tu ruta** | Riesgo de hasta 3 rutas, probabilidad durante el viaje, tramos críticos, víctimas del corredor, cámaras con foto en vivo, lluvia ahora (SIATA) y probabilidad histórica de lluvia, recomendaciones según lluvia, sol, noche, hora pico y medio de transporte | Escribir o marcar origen y destino, elegir hora y medio, pulsar **Calcular** (o el botón de ejemplo) | Elegir la ruta y la hora más seguras y prepararse para los tramos críticos |
 | **3 · ¿Dónde intervenir?** | Top 25 puntos sin CCTV a 300 m, ordenados por gravedad, y comunas sin cámaras | Recorrer el mapa numerado y el ranking | Priorizar cámaras nuevas, operativos o rediseños |
 | **4 · Datos y calidad** | Fuentes con enlace, reglas y conteos de limpieza, hallazgos y propuesta a MEData | Consultar | Transparencia y aporte al portal |
+| **Página del jurado** (`web/jurado.html`) | ¿Son correctas las cifras? ¿Qué tan robustas son las recomendaciones? | Validación en vivo de cada cifra declarada, embudo de calidad por fuente, estadística detallada (serie anual y mensual, hora × día, factores, comunas), mapa animado 2014-2025 y tres simuladores: cobertura de cámaras (estrategia optimizada vs. ranking), riesgo de ruta con sus supuestos y robustez del ranking | Verificar y poner a prueba el modelo |
 
 **Cómo se generan las recomendaciones** (`web/js/ruta.js`, todas con cifras calculadas por el ETL, no escritas a mano):
 

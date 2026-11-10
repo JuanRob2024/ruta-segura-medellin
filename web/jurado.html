@@ -1,0 +1,209 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="dark">
+<meta name="theme-color" content="#08090B">
+<title>Análisis para el jurado</title>
+<meta name="description" content="Ruta Segura Medellín · página técnica para el jurado: reproducibilidad, calidad de datos, estadística detallada y simulación de escenarios.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;700&display=swap">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<link rel="stylesheet" href="css/app.css">
+<link rel="stylesheet" href="css/jurado.css">
+</head>
+<body>
+<header class="top">
+  <div class="in">
+    <a class="brand" href="index.html"><span class="logo" aria-hidden="true"></span>Ruta Segura Medellín</a>
+    <nav class="tabs" aria-label="Secciones">
+      <a href="#resumen">Resumen</a><a href="#validacion">Validación</a><a href="#calidad">Calidad</a>
+      <a href="#estadistica">Estadística</a><a href="#tiempo">En el tiempo</a><a href="#simulaciones">Simulaciones</a>
+    </nav>
+    <span class="meta" id="meta-gen">—</span>
+  </div>
+</header>
+
+<main class="jurado">
+  <!-- ============================================================ RESUMEN -->
+  <section id="resumen" class="bloque">
+    <div class="hero">
+      <div class="head">
+        <p class="note muted">Hackathon de Datos ITM 2026 · Modalidad Pipelines automáticos · Equipo IA 02</p>
+        <h1>Análisis para el jurado</h1>
+        <p class="lede">La página pública cuenta lo esencial al ciudadano. Esta reúne lo que un jurado necesita verificar: de dónde sale
+          cada cifra, qué tan limpios quedan los datos, el detalle estadístico y <b>simuladores</b> para poner a prueba el modelo y las
+          decisiones que propone.</p>
+        <div class="cta">
+          <a class="btn primary" href="#simulaciones">Ir a las simulaciones</a>
+          <a class="btn" href="index.html">Ver la página pública</a>
+          <a class="btn" href="https://github.com/JuanRob2024/ruta-segura-medellin" target="_blank" rel="noopener">Repositorio</a>
+        </div>
+      </div>
+      <div class="card repro"><h3>Reproducir en 4 comandos</h3>
+        <pre><code>pip install -r requirements.txt
+python -m etl run              # ~15 min la primera vez
+python verificar_hallazgos.py  # cifras de esta página
+pytest -q                      # 20 pruebas</code></pre>
+        <p class="note">Todo lo que se ve aquí sale de <code>web/data/*.js</code>, que genera el pipeline. <span id="r-gen"></span></p>
+      </div>
+    </div>
+    <div class="card"><h3>Criterios de evaluación → dónde verificarlos</h3>
+      <div class="tbl" style="max-height:none"><table id="t-rubrica"></table></div></div>
+  </section>
+
+  <!-- ============================================================ VALIDACIÓN -->
+  <section id="validacion" class="bloque">
+    <div class="head"><h2>Validación de las cifras declaradas</h2>
+      <p class="muted">Cada cifra de <code>guia_entrega.pdf</code> e <code>instrucciones.txt</code>, comparada en vivo con los datos que acaba de
+        generar el pipeline. Si alguien vuelve a ejecutar el ETL y una fuente cambió, aquí se ve la diferencia.</p></div>
+    <div class="tbl" style="max-height:none"><table id="t-valida"></table></div>
+  </section>
+
+  <!-- ============================================================ CALIDAD -->
+  <section id="calidad" class="bloque">
+    <div class="head"><h2>Calidad de los datos</h2>
+      <p class="muted">Cuántas filas entran y cuántas quedan limpias por fuente, y qué regla tocó cuántas. Nada se borra en silencio: lo
+        descartado va a cuarentena con su motivo.</p></div>
+    <div class="grid two">
+      <div class="card"><h3>Del archivo a la tabla limpia</h3><div id="q-embudo"></div></div>
+      <div class="card"><h3>Reglas con más efecto</h3><div id="q-reglas"></div></div>
+    </div>
+  </section>
+
+  <!-- ============================================================ ESTADÍSTICA -->
+  <section id="estadistica" class="bloque">
+    <div class="head"><h2>Estadística detallada</h2>
+      <p class="muted">Base: siniestros con heridos o muertos de la serie unificada (MEData 2014-07 → 2020-08 + GeoMedellín 2020-09 → 2025-12,
+        sin radicados repetidos); víctimas MEData 2014-2021; muertes SISC 2003-2023.</p></div>
+    <div class="kpis" id="e-kpis"></div>
+    <div class="grid two">
+      <div class="card"><h3>Serie anual por gravedad</h3><p class="note" id="e-serie-nota"></p>
+        <div class="chart tall"><canvas id="ch-serie"></canvas></div></div>
+      <div class="card"><h3>Serie mensual y cambios de fuente</h3>
+        <p class="note">Siniestros con heridos o muertos por mes. Gris claro: MEData; blanco: GeoMedellín. Marcas: inicio de la
+          pandemia (mar-2020) y cambio de fuente (sep-2020).</p>
+        <div class="chart tall"><canvas id="ch-mensual"></canvas></div></div>
+    </div>
+    <div class="grid two">
+      <div class="card"><h3>Hora × día de la semana</h3>
+        <p class="note">Siniestros con heridos o muertos. Más claro = más siniestros.</p>
+        <div class="heat" id="e-heat"></div></div>
+      <div class="card"><h3>Factores influyentes (razón de tasas)</h3>
+        <p class="note">Tasas comparables por día, por hora o por cada 1.000 víctimas; el número es cuántas veces la categoría de
+          referencia (ref.).</p>
+        <div class="grid" id="e-factores" style="grid-template-columns:repeat(auto-fit,minmax(min(100%,260px),1fr))"></div></div>
+    </div>
+    <div class="grid two">
+      <div class="card"><h3>Víctimas por actor vial y letalidad</h3><div class="chart"><canvas id="ch-actor"></canvas></div></div>
+      <div class="card"><h3>Víctimas por edad y sexo</h3><div class="chart"><canvas id="ch-edad"></canvas></div></div>
+    </div>
+    <div class="card"><h3>Comunas</h3><p class="note">Ubicadas con el polígono oficial. Resaltadas, las comunas sin cámaras CCTV.</p>
+      <div class="tbl"><table id="t-comunas"></table></div></div>
+  </section>
+
+  <!-- ============================================================ EN EL TIEMPO -->
+  <section id="tiempo" class="bloque">
+    <div class="head"><h2>Comportamiento en el tiempo</h2>
+      <p class="muted">Los 400 puntos críticos de la ciudad (celdas de ~110 m), año por año. Dale play para ver cómo se mueven los
+        siniestros con heridos entre 2014 y 2025.</p></div>
+    <div class="grid two">
+      <div class="card" style="padding:10px">
+        <div class="anim-ctrl"><button class="btn" id="t-play">▶ Reproducir</button>
+          <input type="range" id="t-anio" min="0" max="11" value="0" aria-label="Año"><b class="anio-big" id="t-label">2014</b></div>
+        <div class="map big" id="map-tiempo"></div></div>
+      <div class="card"><h3 id="t-tit">Los más siniestrados del año</h3>
+        <p class="note" id="t-nota"></p>
+        <div class="tbl" style="max-height:none"><table id="t-top"></table></div></div>
+    </div>
+  </section>
+
+  <!-- ============================================================ SIMULACIONES -->
+  <section id="simulaciones" class="bloque">
+    <div class="head"><h2>Simulación de escenarios</h2>
+      <p class="muted">Tres simuladores que usan los mismos datos y el mismo código de la página pública, para probar las decisiones que
+        proponemos y qué tan sensibles son a los supuestos.</p></div>
+
+    <!-- S1 cámaras -->
+    <div class="card sim">
+      <h3>A · ¿Cuánto mejora la cobertura si instalamos más cámaras?</h3>
+      <div class="sim-grid">
+        <div class="ctrls">
+          <div class="ctl"><label for="s1-n">Cámaras nuevas</label><input id="s1-n" type="range" min="0" max="50" value="10"><b id="s1-nv"></b></div>
+          <div class="ctl"><label for="s1-r">Radio que cubre una cámara</label><input id="s1-r" type="range" min="100" max="500" step="50" value="300"><b id="s1-rv"></b></div>
+          <div class="field"><label>Estrategia para ubicarlas</label>
+            <div class="seg seg3" id="s1-e"><button data-e="opt" class="on">Optimizada</button><button data-e="mod3">Ranking módulo 3</button><button data-e="ing">Más siniestros</button></div></div>
+          <div class="sim-res" id="s1-res"></div>
+          <p class="note"><b>Optimizada</b>: en cada paso elige el lugar que cubre más siniestros aún sin cubrir (algoritmo voraz).
+            <b>Ranking módulo 3</b>: la lista publicada (más heridos + 10 × muertes, sin CCTV a 300 m).
+            <b>Más siniestros</b>: los lugares con más siniestros, sin mirar dónde ya hay cámaras. Base: siniestros con heridos 2019-2025.</p>
+        </div>
+        <div class="sim-vis"><div class="chart"><canvas id="ch-s1"></canvas></div><div class="map" id="map-s1"></div></div>
+      </div>
+    </div>
+
+    <!-- S2 ruta -->
+    <div class="card sim">
+      <h3>B · ¿Cómo cambia el riesgo de una ruta con la hora, el día, la lluvia y los supuestos del modelo?</h3>
+      <p class="note">Ruta real Parque Berrío → Universidad Nacional (3,4 km, geometría de OSRM). Mismo motor que la página pública (<code>riesgo.js</code>).</p>
+      <div class="sim-grid">
+        <div class="ctrls">
+          <div class="ctl"><label for="s2-h">Hora</label><input id="s2-h" type="range" min="0" max="23" value="8"><b id="s2-hv"></b></div>
+          <div class="ctl"><label for="s2-d">Día</label><input id="s2-d" type="range" min="0" max="6" value="0"><b id="s2-dv"></b></div>
+          <div class="ctl"><label for="s2-t">Duración</label><input id="s2-t" type="range" min="3" max="60" value="10"><b id="s2-tv"></b></div>
+          <div class="ctl"><label for="s2-rad">Radio del corredor</label><input id="s2-rad" type="range" min="20" max="80" step="5" value="40"><b id="s2-radv"></b></div>
+          <div class="ctl"><label for="s2-rr">Razón de lluvia (RR)</label><input id="s2-rr" type="range" min="1" max="2" step=".01" value="1.02"><b id="s2-rrv"></b></div>
+          <div class="ctl"><label for="s2-l">¿Llueve?</label><input id="s2-l" type="checkbox"><span></span></div>
+          <div class="sim-res" id="s2-res"></div>
+        </div>
+        <div class="sim-vis">
+          <p class="note">Probabilidad del viaje para cada hora y día (misma duración y supuestos). El recuadro es el escenario elegido.</p>
+          <div class="heat" id="s2-heat"></div>
+          <div class="chart" style="height:200px"><canvas id="ch-s2"></canvas></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- S3 priorización -->
+    <div class="card sim">
+      <h3>C · ¿Qué tan estable es el ranking de «dónde intervenir»?</h3>
+      <div class="sim-grid">
+        <div class="ctrls">
+          <div class="ctl"><label for="s3-w">Peso de una muerte</label><input id="s3-w" type="range" min="0" max="30" value="10"><b id="s3-wv"></b></div>
+          <div class="ctl"><label for="s3-r">Sin CCTV a menos de</label><input id="s3-r" type="range" min="100" max="600" step="50" value="300"><b id="s3-rv"></b></div>
+          <div class="sim-res" id="s3-res"></div>
+          <p class="note">Puntaje = siniestros con heridos + peso × muertes (2019-2025), solo en lugares cuya CCTV más cercana está más
+            lejos que el radio. Referencia: peso 10 y radio 300 m, como en el módulo 3. Aquí la distancia se mide desde el centro de la celda
+            (en el módulo 3, desde el siniestro más cercano), por eso el orden puede variar un poco. Si el top 10 casi no cambia al mover
+            los supuestos, la recomendación es robusta.</p>
+        </div>
+        <div class="sim-vis"><div class="tbl" style="max-height:none"><table id="t-s3"></table></div></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="bloque">
+    <div class="card"><h3>Supuestos y límites que el jurado debe conocer</h3><ul class="recs" id="j-limites"></ul></div>
+  </section>
+</main>
+<footer>
+  Datos: Alcaldía de Medellín (MEData, GeoMedellín, SIMM), SIATA e IDEAM vía datos.gov.co · CC BY-SA 4.0. Mapa © colaboradores de
+  OpenStreetMap. <a href="https://github.com/JuanRob2024/ruta-segura-medellin/blob/main/DOCUMENTACION.md" target="_blank" rel="noopener">Documentación técnica</a> ·
+  <a href="../docs/ejemplo_funcionamiento.html">Cálculo paso a paso</a> · <a href="index.html">Página pública</a>
+</footer>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="data/meta.js"></script>
+<script src="data/diagnostico.js"></script>
+<script src="data/grilla.js"></script>
+<script src="data/intervencion.js"></script>
+<script src="data/calidad.js"></script>
+<script src="data/jurado.js"></script>
+<script src="js/util.js"></script>
+<script src="js/riesgo.js"></script>
+<script src="js/ruta_ejemplo.js"></script>
+<script src="js/jurado.js"></script>
+</body>
+</html>

@@ -1,0 +1,41 @@
+/* Página del jurado — mismo sistema visual que app.css (negro, gris, rojo solo para fatalidad) */
+main.jurado { display: flex; flex-direction: column; gap: 46px; }
+.bloque { display: flex; flex-direction: column; gap: 18px; scroll-margin-top: 70px; }
+.repro pre { margin: 0; background: var(--bg); border: 1px solid var(--line); padding: 12px 14px; overflow: auto; font-size: 13.5px; line-height: 1.7; }
+.repro code { font-family: ui-monospace, Consolas, monospace; }
+
+.ok-si { color: var(--fg); font-weight: 700; }
+.ok-no { color: var(--accent); font-weight: 700; }
+
+/* embudo de calidad */
+.emb { display: grid; grid-template-columns: minmax(150px, 34%) 1fr; gap: 6px 12px; align-items: center; font-size: 14px; }
+.emb .barras { display: flex; flex-direction: column; gap: 3px; }
+.emb .b { height: 9px; width: var(--w); transform-origin: left; animation: crecerX .9s ease-out both; }
+.emb .b.leidas { background: #5A5D66; }
+.emb .b.limpias { background: var(--fg); }
+.emb small { color: var(--muted); font-size: 12.5px; }
+
+/* mapa animado */
+.anim-ctrl { display: flex; align-items: center; gap: 12px; padding: 4px 6px 10px; }
+.anim-ctrl input { flex: 1; accent-color: var(--accent); }
+.anio-big { font: 700 34px/1 var(--font-head); min-width: 86px; text-align: right; font-variant-numeric: tabular-nums; }
+
+/* simuladores */
+.sim { gap: 14px; }
+.sim-grid { display: grid; gap: 18px; grid-template-columns: minmax(0, 340px) minmax(0, 1fr); align-items: start; }
+@media (max-width: 960px) { .sim-grid { grid-template-columns: 1fr; } }
+.ctrls { display: flex; flex-direction: column; gap: 12px; }
+.ctl { display: grid; grid-template-columns: 1fr 70px; gap: 2px 10px; align-items: center; font-size: 14px; }
+.ctl label { grid-column: 1 / -1; color: var(--muted); font-size: 13.5px; }
+.ctl input[type=range] { width: 100%; accent-color: var(--fg); }
+.ctl b { text-align: right; font-variant-numeric: tabular-nums; }
+.seg.seg3 { grid-template-columns: repeat(3, 1fr); }
+.sim-res { border: 1px solid var(--line); border-left: 3px solid var(--fg); background: var(--bg); padding: 12px 14px; display: flex; flex-direction: column; gap: 4px; }
+.sim-res .big { font: 700 38px/1 var(--font-head); font-variant-numeric: tabular-nums; }
+.sim-res .big.rojo { color: var(--accent); }
+.sim-res span { color: var(--muted); font-size: 13.5px; }
+.sim-vis { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+.sim-vis .map { height: 360px; }
+.heat .c.sel { outline: 2px solid var(--accent); outline-offset: -1px; }
+.delta-up { color: var(--accent); } .delta-dn { color: var(--muted); }
+.nuevo { background: var(--fg); color: #08090B; font: 700 11px var(--font); display: grid; place-items: center; border: 1px solid #08090B; }

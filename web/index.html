@@ -66,39 +66,44 @@
   <section class="view" id="v-diagnostico">
     <div class="head">
       <h2>1 · ¿Qué está pasando en las vías de Medellín?</h2>
-      <p class="muted">Siniestros con heridos o muertos de la serie unificada MEData + GeoMedellín (sin duplicados), víctimas de MEData
-        y muertes del SISC. <span id="d-periodo"></span></p>
+      <p class="muted">Lo esencial de 11 años de datos, contado para ti. Dinos cómo te mueves y por dónde, y te mostramos lo que más te afecta.</p>
     </div>
-    <div class="kpis" id="d-kpis"></div>
-    <div class="grid two">
-      <div class="card"><h3>Evolución anual</h3>
-        <p class="note" id="d-serie-nota"></p>
-        <div class="chart tall"><canvas id="ch-serie"></canvas></div></div>
-      <div class="card"><h3>¿A qué hora y qué día?</h3>
-        <p class="note">Siniestros con heridos o muertos por hora y día de la semana. Más rojo = más siniestros.</p>
-        <div class="heat" id="d-heat"></div>
-        <div class="legend"><span>Menos</span><span id="d-heat-leg" style="display:flex;gap:2px"></span><span>Más</span></div></div>
+
+    <div class="perfil" role="group" aria-label="Personalizar">
+      <div class="field"><label>Me muevo en</label>
+        <div class="seg" id="p-medio">
+          <button data-m="Moto" class="on">Moto</button><button data-m="Vehículo">Carro o bus</button>
+          <button data-m="Bicicleta">Bici</button><button data-m="Peatón">A pie</button></div></div>
+      <div class="field"><label for="p-comuna">Mi comuna o corregimiento</label><select id="p-comuna"></select></div>
     </div>
-    <div class="card"><h3>Factores influyentes</h3>
-      <p class="note">Cada barra es una tasa comparable (por día, por hora o por cada 1.000 víctimas). El número de la derecha dice cuántas veces
-        es la categoría frente a la de referencia (gris). Así se compara sin que pese que haya más días hábiles que festivos.</p>
-      <div class="grid" id="d-factores"></div></div>
-    <div class="grid two">
-      <div class="card"><h3>¿Quiénes son las víctimas?</h3>
-        <p class="note">Víctimas por actor vial (MEData 2014-2021) y cuántas mueren por cada 1.000.</p>
-        <div class="chart"><canvas id="ch-actor"></canvas></div></div>
-      <div class="card"><h3>Edad y sexo de las víctimas</h3>
-        <p class="note">Víctimas por grupo de edad (MEData 2014-2021).</p>
-        <div class="chart"><canvas id="ch-edad"></canvas></div></div>
+
+    <div class="tendencia reveal" id="d-tendencia"></div>
+
+    <div class="grid three">
+      <div class="card reveal"><h3>Si tienes un siniestro, ¿qué tan grave es?</h3>
+        <div id="d-grave"></div></div>
+      <div class="card reveal"><h3>¿A qué hora hay más riesgo?</h3>
+        <div class="reloj" id="d-reloj"></div>
+        <p class="note" id="d-reloj-txt"></p></div>
+      <div class="card reveal"><h3>¿Qué días?</h3>
+        <div id="d-dias"></div>
+        <p class="note" id="d-dias-txt"></p></div>
     </div>
+
     <div class="grid two">
-      <div class="card"><h3>Puntos críticos</h3>
-        <p class="note">Celdas de ~110 m con 15 o más siniestros con heridos o muertos (2014-2025). El tamaño indica el número de siniestros. En gris, las cámaras CCTV.</p>
+      <div class="card reveal"><h3 id="d-com-tit">Tu comuna</h3>
+        <div id="d-comuna"></div></div>
+      <div class="card reveal"><h3>Dónde tener más cuidado</h3>
+        <p class="note">Esquinas con más siniestros con heridos (2014-2025). En gris, cámaras de circuito cerrado.</p>
         <div class="map" id="map-diag"></div></div>
-      <div class="card"><h3>Comunas</h3>
-        <p class="note">Ubicadas con el polígono oficial. Resaltadas en rojo, las comunas sin ninguna cámara CCTV.</p>
-        <div class="tbl"><table id="t-comunas"></table></div></div>
     </div>
+
+    <div class="grid two">
+      <div class="card reveal"><h3>¿Y cuando llueve?</h3><div id="d-lluvia"></div></div>
+      <div class="card reveal"><h3>Tres cosas que puedes hacer hoy</h3><ul class="recs" id="d-tips"></ul></div>
+    </div>
+    <p class="muted small">¿Quieres el detalle técnico (tasas, factores, simulaciones y calidad de datos)?
+      <a href="jurado.html">Abre la página de análisis para el jurado</a>.</p>
   </section>
 
   <!-- =============================================================== MÓDULO 2 -->
@@ -178,7 +183,7 @@
   <section class="view" id="v-datos">
     <div class="head">
       <h2>4 · Datos y calidad</h2>
-      <p class="muted">De dónde salen los datos, qué ruido traen y cómo se limpian. Todo lo genera el pipeline <code>python -m etl run</code>.</p>
+      <p class="muted">De dónde salen los datos, qué ruido traen y cómo se limpian. Todo lo genera el pipeline <code>python -m etl run</code>. El detalle técnico, la validación de cifras y los simuladores están en la <a href="jurado.html">página de análisis para el jurado</a>.</p>
     </div>
     <div class="card"><h3>Del portal a esta página</h3><div class="flow" id="d-flow"></div></div>
     <div class="card"><h3>Fuentes</h3><div class="tbl"><table id="t-fuentes"></table></div></div>
@@ -191,7 +196,7 @@
 </main>
 <footer>
   Datos: Alcaldía de Medellín (MEData, GeoMedellín, SIMM), SIATA y IDEAM vía datos.gov.co, bajo licencia CC BY-SA 4.0. Mapa base ©
-  colaboradores de OpenStreetMap. Rutas: OSRM. Búsqueda: Photon (komoot). Hackathon de Datos ITM 2026 · <a href="https://github.com/JuanRob2024/ruta-segura-medellin/blob/main/DOCUMENTACION.md" target="_blank" rel="noopener">Documentación técnica</a> · <a href="../docs/ejemplo_funcionamiento.html">Cómo se calcula el riesgo</a>
+  colaboradores de OpenStreetMap. Rutas: OSRM. Búsqueda: Photon (komoot). Hackathon de Datos ITM 2026 · <a href="https://github.com/JuanRob2024/ruta-segura-medellin/blob/main/DOCUMENTACION.md" target="_blank" rel="noopener">Documentación técnica</a> · <a href="../docs/ejemplo_funcionamiento.html">Cómo se calcula el riesgo</a> · <a href="jurado.html">Análisis para el jurado</a>
 </footer>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>

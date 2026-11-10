@@ -10,6 +10,8 @@ Equipo: Equipo IA 02 · Hackathon de Datos ITM 2026 · Modalidad: Pipelines auto
 
 2. PROBARLO EN LÍNEA
    Página: https://juanrob2024.github.io/ruta-segura-medellin/
+   Análisis para el jurado (validación de cifras, calidad y simuladores):
+     https://juanrob2024.github.io/ruta-segura-medellin/web/jurado.html
    Ejemplo del cálculo de riesgo: https://juanrob2024.github.io/ruta-segura-medellin/docs/ejemplo_funcionamiento.html
    Repositorio: https://github.com/JuanRob2024/ruta-segura-medellin
    Sin internet en línea: abrir web/index.html con doble clic (los datos ya vienen incluidos).
@@ -50,7 +52,10 @@ Equipo: Equipo IA 02 · Hackathon de Datos ITM 2026 · Modalidad: Pipelines auto
         aparecen 2 rutas en el mapa, la más segura marcada, nivel "Riesgo muy alto",
         la probabilidad del viaje, la lluvia en vivo de SIATA, tramos críticos
         (CR 63 CL 58, CR 53 CL 53…), cámaras con foto en vivo y recomendaciones.
-      - Módulo 3: mapa con los 25 puntos prioritarios sin cámara; n.º 1: CL 67 CR 53.
+      - Módulo 3: mapa con los 25 puntos prioritarios sin cámara; n.º 1: CR 53 CL 53.
+      - web/jurado.html: la tabla «Validación de las cifras declaradas» muestra cada cifra
+        de esta sección con «✓ coincide» frente a los datos de su corrida, más tres
+        simuladores (cámaras, riesgo de ruta y robustez del ranking).
       - docs/ejemplo_funcionamiento.html: el cálculo del riesgo paso a paso.
    Las cifras pueden variar un poco si las entidades actualizan sus datos.
 

@@ -177,7 +177,7 @@ def test_web_export(pipeline):
     cfg, _, _ = pipeline
     out = cfg["paths"]["web_out"]
     archivos = {p.stem for p in out.glob("*.js")}
-    assert {"diagnostico", "grilla", "camaras", "clima", "intervencion", "calidad", "meta"} <= archivos
+    assert {"diagnostico", "grilla", "camaras", "clima", "intervencion", "calidad", "jurado", "meta"} <= archivos
 
     def carga(n):
         txt = (out / f"{n}.js").read_text(encoding="utf-8")
@@ -187,6 +187,9 @@ def test_web_export(pipeline):
     assert g["celdas"] and all(len(c) == 8 for c in g["celdas"])
     assert abs(sum(g["perfil_hora"]) - 1) < 1e-6 and abs(sum(g["perfil_dia"]) - 1) < 1e-6
     assert g["umbrales"]["p50"] <= g["umbrales"]["p75"] <= g["umbrales"]["p90"]
+    j = carga("jurado")
+    assert j["celdas_2019_2025"] and all(len(c) == 5 for c in j["celdas_2019_2025"])
+    assert all(len(p[4]) == len(j["anios"]) for p in j["puntos_anio"])
     todo = "".join((out / f"{n}.js").read_text(encoding="utf-8") for n in archivos)
     for campo in ("radicado", "id_victima", '"edad"', "id_muerte"):
         assert campo not in todo, f"la web no debe exponer {campo}"

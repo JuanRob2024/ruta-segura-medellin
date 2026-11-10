@@ -1,6 +1,6 @@
 # Ruta Segura Medellín
 
-**[Abrir la página en línea](https://juanrob2024.github.io/ruta-segura-medellin/)** · [Ejemplo del cálculo de riesgo](https://juanrob2024.github.io/ruta-segura-medellin/docs/ejemplo_funcionamiento.html)
+**[Abrir la página en línea](https://juanrob2024.github.io/ruta-segura-medellin/)** · [Análisis para el jurado](https://juanrob2024.github.io/ruta-segura-medellin/web/jurado.html) · [Ejemplo del cálculo de riesgo](https://juanrob2024.github.io/ruta-segura-medellin/docs/ejemplo_funcionamiento.html)
 
 **¿Qué tan riesgosa es tu ruta por Medellín?** Pipeline automático + página web con datos abiertos de **MEData**,
 **GeoMedellín**, **SIATA** y **datos.gov.co** · Hackathon de Datos ITM 2026 · Modalidad *Pipelines automáticos*.
@@ -38,7 +38,9 @@ pytest -q                       # 20 pruebas
 
 * [`instrucciones.txt`](instrucciones.txt): pasos para el jurado.
 * [`DOCUMENTACION.md`](DOCUMENTACION.md): fuentes, arquitectura, calidad de datos, decisiones, reglas de negocio, modelo de riesgo y diagramas.
+* [`web/jurado.html`](web/jurado.html): página técnica para el jurado (validación en vivo de las cifras, calidad de datos, estadística detallada, mapa animado 2014-2025 y tres simuladores de escenarios).
 * [`docs/ejemplo_funcionamiento.html`](docs/ejemplo_funcionamiento.html): el cálculo del riesgo de una ruta, paso a paso e interactivo.
+* [`docs/propuesta_grafica.html`](docs/propuesta_grafica.html): propuesta de elementos gráficos para el equipo, con demostraciones en vivo.
 * `guia_entrega.pdf`: formulario de entrega diligenciado.
 
 Datos: Alcaldía de Medellín (MEData, GeoMedellín, SIMM), SIATA e IDEAM vía datos.gov.co · CC BY-SA 4.0 donde aplica.
