@@ -7,7 +7,7 @@
     U.$('#i-lede').innerHTML = `Entre 2019 y 2025, el <b>${U.pct(1 - I.pct_cubierto_cctv, 0)}</b> de los siniestros con heridos o muertos
       ocurrió a más de 300 m de una cámara de circuito cerrado. Esta lista ordena los lugares donde una cámara nueva, un operativo
       o un rediseño vial tendrían más impacto.`;
-    U.$('#i-regla').textContent = `Regla de priorización: ${I.regla}.`;
+    U.$('#i-regla').innerHTML = `Regla de priorización: ${U.esc(I.regla)}. <b>Sobre las muertes:</b> ${U.esc(I.cobertura_muertes?.nota || '')}`;
 
     mapa = U.mapa('map-int', { scroll: true });
     for (const c of RSM.camaras.filter((c) => c.tipo === 'CCTV')) {

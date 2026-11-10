@@ -14,6 +14,7 @@ import re
 from pathlib import Path
 
 import duckdb
+import numpy as np
 import pandas as pd
 
 log = logging.getLogger("etl.load")
@@ -58,7 +59,7 @@ VIEWS = {
     # Siniestros 2019-2025 alrededor de cada cámara CCTV (radio 300 m)
     "v_camaras_cctv_siniestros": """
         SELECT c.id_camara, c.nombre, c.direccion, c.comuna, c.url_snapshot IS NOT NULL AS tiene_foto,
-               COUNT(s.radicado) AS siniestros_300m,
+               COUNT(s.fecha_hora) AS siniestros_300m,
                SUM(CASE WHEN s.gravedad_incidente = 'Con heridos' THEN 1 ELSE 0 END) AS con_heridos,
                MAX(s.fecha) AS ultimo_siniestro
         FROM dim_camara c LEFT JOIN fact_siniestro s
@@ -80,7 +81,10 @@ def _prep(df: pd.DataFrame) -> pd.DataFrame:
         if df[c].dtype == object:
             # columnas mixtas (p.ej. fecha como date) → tipos consistentes para parquet
             sample = df[c].dropna().head(1)
-            if not sample.empty and hasattr(sample.iloc[0], "isoformat") and not isinstance(sample.iloc[0], str):
+            vals = df[c].dropna()
+            if len(vals) and vals.map(type).isin([bool, np.bool_]).all():
+                df[c] = df[c].astype("boolean")  # sí/no con vacíos (NA = sin dato): BOOLEAN en DuckDB y Power BI
+            elif not sample.empty and hasattr(sample.iloc[0], "isoformat") and not isinstance(sample.iloc[0], str):
                 df[c] = pd.to_datetime(df[c])
             else:
                 df[c] = df[c].astype("string")
@@ -103,6 +107,8 @@ def run_load(cfg: dict, tables: dict[str, pd.DataFrame], report) -> None:
             needed = set(re.findall(r"\b((?:fact|dim)_[a-z_]+)\b", sql))
             if needed <= existing:
                 con.execute(f"CREATE OR REPLACE VIEW {v} AS {sql}")
+            else:
+                log.warning("[load] la vista %s no se creó: faltan %s", v, sorted(needed - existing))
         _write_md_report(cfg, report.data, con)
     finally:
         con.close()

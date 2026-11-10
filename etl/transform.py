@@ -119,8 +119,13 @@ def _comodin_dinamico(df, dir_col, flags: C.Flags, rep: Report, ds: str, min_n=5
     norm = df[dir_col].astype("string").str.upper().str.findall(r"\d+").map(
         lambda x: " ".join(x[:2]) if isinstance(x, list) else "")
     t = pd.DataFrame({"k": key, "norm": norm}).dropna(subset=["k"])
-    g = t.groupby("k")["norm"].agg(n="size", modal=lambda s: s.value_counts(normalize=True).iloc[0])
-    malos = g[(g["n"] >= min_n) & (g["modal"] < max_modal)].index
+    tam = t.groupby("k").size()
+    cand = t[t["k"].isin(tam[tam >= min_n].index)]  # solo los puntos con suficientes registros
+    if cand.empty:
+        malos = pd.Index([])
+    else:
+        modal = cand.groupby(["k", "norm"]).size().groupby(level=0).max() / tam[tam >= min_n]
+        malos = modal[modal < max_modal].index
     m = key.isin(malos) & df["latitud"].notna()
     rep.add(ds, "coord_comodin_detectada", flags.add(m, "coord_comodin_detectada"))
     rep.add(ds, "puntos_comodin_detectados", list(map(str, malos)))
@@ -593,8 +598,10 @@ def build_incidentes_camaras(tables: dict) -> pd.DataFrame:
     if not parts:
         return pd.DataFrame()
     allp = pd.concat(parts, ignore_index=True)
-    # 2019-2020 aparece en las dos fuentes: se conserva un solo registro por radicado
-    return allp.drop_duplicates("radicado", keep="last").reset_index(drop=True)
+    # 2019-2020 aparece en las dos fuentes: un solo registro por radicado. Ojo: pandas trata NaN = NaN, así que
+    # los radicados nulos se dejan fuera de la deduplicación (si no, todos colapsarían en uno solo).
+    rep = allp["radicado"].notna() & allp.duplicated("radicado", keep="last")
+    return allp[~rep].drop(columns=["radicado"]).reset_index(drop=True)
 
 
 # ============================================================ SISC: muertes en vías 2003-2023 (MEData)

@@ -213,7 +213,7 @@
     const nums = [
       [U.n0(ev.anual), 'siniestros con heridos por año en el corredor'],
       [U.n1(ev.porKm), 'siniestros por km al año'],
-      [U.n0(ev.muertes), `muertes registradas en el corredor (2014-2023)`],
+      [U.n0(ev.muertes), `muertes en el corredor (2014 a ${String(RSM.grilla.cobertura_muertes?.hasta || '2023').slice(0, 7)}; ver «¿Cómo se calcula?»)`],
       [U.pct(ev.pHora, 1), `probabilidad en 1 hora a esa misma hora`],
     ];
     U.$('#r-nums').replaceChildren(...nums.map(([v, l]) => U.el(`<div class="box"><b>${v}</b><span class="small muted">${l}</span></div>`)));
@@ -223,7 +223,8 @@
       siniestros) y el día de la semana; ${a.llueveAhora ? `como SIATA reporta lluvia cerca de la ruta, se multiplica por ${U.n2(ev.fLluvia)}; ` : ''}
       luego se calcula la probabilidad de al menos un siniestro durante los ${U.n0(a.durMin)} minutos del viaje (Poisson).
       <b>No es la probabilidad de que tú tengas un accidente</b>: mide qué tan frecuentes son los siniestros en las vías que vas a recorrer.
-      El nivel compara la siniestralidad media por celda con todas las vías con registros de la ciudad.`;
+      El nivel compara la siniestralidad media por celda con todas las vías con registros de la ciudad.
+      ${U.esc(RSM.grilla.cobertura_muertes?.nota || '')}`;
     tramos(a);
     camaras(a);
     clima(a);

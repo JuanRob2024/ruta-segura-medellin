@@ -219,10 +219,59 @@ def test_servidor_arcgis_caido_no_se_reintenta_capa_por_capa(tmp_path, monkeypat
 
     def caido(self, name, *a, **k):
         llamadas.append(name)
-        raise requests.exceptions.ConnectionError("Max retries exceeded")
+        from etl.extract import ServidorCaido
+        raise ServidorCaido("ConnectionError: Max retries exceeded")
 
     monkeypatch.setattr(ArcGISClient, "download", caido)
     resumen = run_extract(cfg, only=["arcgis"])
     capas = [f"arcgis:{n}" for n in cfg["arcgis"]["layers"]]
     assert len(llamadas) == 1                                   # solo se intenta la primera capa
     assert sorted(resumen["fallidas"]) == sorted(capas)         # todas quedan reportadas
+
+
+
+def test_arcgis_reintenta_una_pagina_cortada_a_mitad_de_capa(tmp_path, monkeypatch):
+    """Un corte momentáneo en la página 2 de una capa no tumba la descarga completa."""
+    import etl.extract as E
+    monkeypatch.setattr(E.time, "sleep", lambda s: None)
+    cfg = _cfg(tmp_path)
+    resp = iter([FakeResp(js={"features": [{"properties": {"i": i}} for i in range(1000)], "exceededTransferLimit": True}),
+                 FakeResp(status=503), FakeResp(js={"features": [{"properties": {"i": 1000}}]})])
+
+    class S:
+        def get(self, url, params=None, **kw):
+            return next(resp)
+
+    g = ArcGISClient(cfg)
+    g.s = S()
+    assert len(g.layer_geojson("x/MapServer/0")["features"]) == 1001
+
+
+def test_arcgis_primera_pagina_sin_respuesta_es_servidor_caido(tmp_path, monkeypatch):
+    import etl.extract as E
+    monkeypatch.setattr(E.time, "sleep", lambda s: None)
+    cfg = _cfg(tmp_path)
+
+    class S:
+        def get(self, url, params=None, **kw):
+            raise ConnectionError("conexión cerrada")
+
+    g = ArcGISClient(cfg)
+    g.s = S()
+    with pytest.raises(E.ServidorCaido):
+        g.layer_geojson("x/MapServer/0")
+
+
+def test_extraccion_parcial_conserva_el_estado_de_las_demas_fuentes(tmp_path, monkeypatch):
+    cfg = _cfg(tmp_path)
+    rep = cfg["paths"]["reports"] / "extraccion.json"
+    rep.write_text(json.dumps({"fuentes": {"siata": {"estado": "ok"}, "medata:victimas": {"estado": "error"}}}), encoding="utf-8")
+
+    def ok(self, *a, **k):
+        self.ultimo = {"estado": "ok", "filas": 10}
+
+    monkeypatch.setattr(MEDataClient, "download", ok)
+    resumen = run_extract(cfg, only=["victimas"])
+    assert resumen["fuentes"]["siata"]["estado"] == "ok"            # no se corrió: conserva su estado
+    assert resumen["fuentes"]["medata:victimas"]["estado"] == "ok"   # se corrió: estado nuevo
+    assert resumen["fallidas"] == []

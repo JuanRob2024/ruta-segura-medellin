@@ -25,6 +25,10 @@ from .common import Manifest, Timer, http_session, now_utc
 
 
 # --------------------------------------------------------------------------- validación de descargas
+class ServidorCaido(Exception):
+    """El servidor no respondió ni siquiera la primera página: no vale la pena insistir con otras capas."""
+
+
 class DescargaRechazada(Exception):
     """La fuente respondió, pero con datos sospechosos (vacía o mucho más pequeña que la copia anterior)."""
 
@@ -66,7 +70,12 @@ class MEDataClient:
             return r.json()
         except Exception as e:  # noqa: BLE001
             log.warning("API de metadatos falló (%s); intento con Selenium", e)
-            return self._metadata_selenium(dataset_id)
+            try:
+                return self._metadata_selenium(dataset_id)
+            except ImportError:
+                # Selenium es opcional (no está en requirements.txt): se informa la causa ORIGINAL
+                raise RuntimeError(f"la API de metadatos de MEData falló ({e}) y Selenium no está instalado "
+                                   "para el respaldo (pip install selenium)") from e
 
     def _metadata_selenium(self, dataset_id: str) -> dict:
         """Fallback: abre la página con Chrome headless y extrae el link .csv."""
@@ -241,15 +250,30 @@ class ArcGISClient:
             }
             if simplify:
                 params |= {"maxAllowableOffset": simplify, "geometryPrecision": 6}
-            r = self.s.get(f"{self.base}/{path}/query", params=params, timeout=self.timeout)
-            r.raise_for_status()
-            gj = r.json()
+            gj = self._pagina(path, params, offset)
             batch = gj.get("features", [])
             feats += batch
             if len(batch) < page and not gj.get("exceededTransferLimit"):
                 break
             offset += page
         return {"type": "FeatureCollection", "features": feats}
+
+    def _pagina(self, path: str, params: dict, offset: int, intentos: int = 3) -> dict:
+        """Una página de la capa. Un corte momentáneo a mitad de una capa grande (cientos de páginas) se reintenta
+        con espera; si ni la primera página responde, el servidor está caído."""
+        for i in range(1, intentos + 1):
+            try:
+                r = self.s.get(f"{self.base}/{path}/query", params=params, timeout=self.timeout)
+                r.raise_for_status()
+                return r.json()
+            except Exception as e:  # noqa: BLE001
+                if i == intentos:
+                    if offset == 0:
+                        raise ServidorCaido(f"{type(e).__name__}: {e}") from e
+                    raise
+                log.warning("  página %d de %s falló (%s); reintento %d/%d", offset // 1000 + 1, path,
+                            type(e).__name__, i, intentos - 1)
+                time.sleep(5 * i)
 
     def download(self, name: str, spec: dict, raw_dir: Path, manifest: Manifest) -> Path:
         out = raw_dir / "arcgis" / f"{name}.geojson"
@@ -405,8 +429,7 @@ def run_extract(cfg: dict, only: list[str] | None = None, force=False) -> dict:
                                          "ultima_descarga_buena": manifest.get(f"arcgis:{name}").get("extracted_at")}
             continue
         correr(f"arcgis:{name}", lambda n=name, sp=spec: gis.download(n, sp, raw, manifest), gis)
-        det = fuentes[f"arcgis:{name}"].get("detalle", "")
-        if fuentes[f"arcgis:{name}"]["estado"] == "error" and ("ConnectionError" in det or "Max retries" in det or "Timeout" in det):
+        if fuentes[f"arcgis:{name}"].get("detalle", "").startswith("ServidorCaido"):
             caido = f"arcgis:{name}"
 
     if not only or "lluvia" in only:
@@ -414,10 +437,17 @@ def run_extract(cfg: dict, only: list[str] | None = None, force=False) -> dict:
     if not only or "siata" in only:
         correr("siata", lambda: extract_siata(cfg, raw, manifest))
 
+    rep = cfg["paths"]["reports"] / "extraccion.json"
+    if only and rep.exists():
+        # extracción parcial (--only): las fuentes que no se corrieron conservan su último estado
+        try:
+            previo = json.loads(rep.read_text(encoding="utf-8")).get("fuentes", {})
+            fuentes = {**{k: v for k, v in previo.items() if k not in fuentes}, **fuentes}
+        except (ValueError, OSError):
+            pass
     fallidas = {k: v for k, v in fuentes.items() if v["estado"] in ("error", "rechazada")}
     resumen = {"inicio": inicio, "fin": now_utc(), "respaldo": copia.name if copia else None,
                "fuentes": fuentes, "fallidas": sorted(fallidas)}
-    rep = cfg["paths"]["reports"] / "extraccion.json"
     rep.write_text(json.dumps(resumen, indent=2, ensure_ascii=False), encoding="utf-8")
     if fallidas:
         log.warning("EXTRACCIÓN CON AVISOS: %d fuente(s) no se actualizaron y se usará su copia anterior: %s",

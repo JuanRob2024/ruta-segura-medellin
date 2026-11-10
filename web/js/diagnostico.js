@@ -22,6 +22,7 @@
     const prev = her.slice(0, -1), prom = prev.reduce((a, x) => a + x.v, 0) / prev.length;
     const maxM = mue.reduce((a, x) => (x.v > a.v ? x : a)), ultM = mue[mue.length - 1];
     const sube = ult.v > prom;
+    const mesesSisc = (D().serie.find((r) => r.anio === ultM.a) || {}).meses_sisc || 12;
     const spark = (arr, color) => {
       const w = 220, h = 48, mn = Math.min(...arr.map((x) => x.v)) * .9, mx = Math.max(...arr.map((x) => x.v));
       const X = (i) => 4 + (i * (w - 8)) / (arr.length - 1), Y = (v) => h - 6 - ((v - mn) / (mx - mn)) * (h - 14);
@@ -36,7 +37,7 @@
       <div class="t-msg"><span class="t-tag ${sube ? 'sube' : ''}">${sube ? '▲ Va en aumento' : '▼ Va bajando'}</span>
         <p><b>${ult.a}</b> cerró con <b>${U.n0(ult.v)}</b> siniestros con heridos, ${U.pct(Math.abs(ult.v / prom - 1), 0)}
         ${sube ? 'más' : 'menos'} que el promedio de ${prev[0].a}-${prev[prev.length - 1].a}${maxH.a === ult.a ? ': <b>el año más alto de la serie</b>' : ''}.
-        ${maxM.a === ultM.a ? `Y ${ultM.a} fue el año con más muertes en las vías (<b>${U.n0(ultM.v)}</b>).` : ''}</p></div>
+        ${maxM.a === ultM.a ? `Y ${ultM.a} fue el año con más muertes en las vías (<b>${U.n0(ultM.v)}</b>${mesesSisc < 12 ? `, y eso que los datos llegan solo hasta el mes ${mesesSisc}` : ''}).` : ''}</p></div>
       <div class="t-spark"><span class="note">Siniestros con heridos por año</span>${spark(her, '#F0F0F0')}</div>
       <div class="t-spark"><span class="note">Muertes en las vías (SISC)</span>${spark(mue, '#E53945')}</div>`;
   }

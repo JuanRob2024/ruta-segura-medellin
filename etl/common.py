@@ -43,6 +43,7 @@ def http_session(cfg: dict) -> requests.Session:
     s = requests.Session()
     retry = Retry(
         total=h.get("retries", 4),
+        connect=h.get("connect_retries", 1),  # servidor caído: fallar rápido; 5xx/429 sí se reintentan
         backoff_factor=h.get("backoff_s", 3),
         status_forcelist=(429, 500, 502, 503, 504),
         allowed_methods=("GET", "HEAD"),

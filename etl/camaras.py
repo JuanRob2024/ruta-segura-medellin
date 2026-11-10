@@ -15,6 +15,7 @@ Por ronda, para cada cámara:
 from __future__ import annotations
 
 import hashlib
+import json
 import io
 import logging
 import time
@@ -38,7 +39,8 @@ class Collector:
         self.s = http_session(cfg)
         self.s.headers["Referer"] = "https://www.medellin.gov.co/SIMM/camaras-de-circuito-cerrado"
         self.root: Path = cfg["paths"]["snapshots"]
-        self.last_hash: dict[str, str] = {}
+        self._hash_path = self.root / "_ultimo_hash.json"
+        self.last_hash: dict[str, str] = json.loads(self._hash_path.read_text(encoding="utf-8")) if self._hash_path.exists() else {}
         self.model = None
         if self.c.get("conteo_vehiculos"):
             from ultralytics import YOLO  # pip install ultralytics
@@ -109,6 +111,7 @@ class Collector:
                 log.debug("%s: %s", cam.id_camara, e)
             rows.append(row)
         df = pd.DataFrame(rows)
+        self._hash_path.write_text(json.dumps(self.last_hash), encoding="utf-8")
         resumen = df["estado"].value_counts().to_dict()
         log.info("Ronda %s → %s", ts, resumen)
         self._persist(df)

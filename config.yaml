@@ -24,6 +24,7 @@ respaldo:
 http:
   timeout_s: 120
   retries: 4
+  connect_retries: 1       # si el servidor no acepta la conexión, 1 reintento (no 4 con espera)
   backoff_s: 3
   user_agent: "etl-movilidad-medellin/1.0 (uso academico/analitico)"
 
@@ -36,7 +37,7 @@ bbox_medellin:
   lon_max: -75.47
 
 # Coordenadas "comodín" que el sistema fuente asigna cuando no logra
-# georreferenciar (detectadas en el perfilado: 19.613 incidentes en este punto).
+# georreferenciar (última corrida: 19.611 incidentes en este punto).
 placeholder_coords:
   - [-75.7037762763, 6.22141524356]
 

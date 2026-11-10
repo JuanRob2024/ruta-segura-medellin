@@ -77,7 +77,7 @@ def _vista_unificada(con, corte: str) -> None:
            codigo_comuna_geo, comuna_geo, direccion, dist_m_camara_cctv, llovia, 'GeoMedellín' AS fuente
     FROM fact_siniestro
     WHERE fecha_hora >= TIMESTAMP '{corte}'
-      AND radicado NOT IN (SELECT radicado FROM fact_incidente WHERE radicado IS NOT NULL)""")
+      AND (radicado IS NULL OR radicado NOT IN (SELECT radicado FROM fact_incidente WHERE radicado IS NOT NULL))""")
     # Base comparable entre años: GeoMedellín dejó de publicar "Solo daños" desde 2023, así que los análisis
     # usan solo siniestros con heridos o muertos (estables en todo el periodo).
     con.execute("""CREATE OR REPLACE TEMP VIEW uh AS
@@ -120,14 +120,24 @@ def diagnostico(con, cfg) -> dict:
                           SUM((gravedad_incidente='Con heridos')::INT) con_heridos,
                           SUM((gravedad_incidente='Solo daños')::INT) solo_danos,
                           SUM((gravedad_incidente='Con muertos')::INT) con_muertos,
-                          ANY_VALUE(fuente) fuente FROM u GROUP BY 1),
+                          STRING_AGG(DISTINCT fuente, ' + ' ORDER BY fuente DESC) fuente FROM u GROUP BY 1),
              v AS (SELECT anio, COUNT(*) victimas, SUM((gravedad_victima='Muerto')::INT) muertos_medata
                    FROM fact_victima GROUP BY 1),
-             m AS (SELECT anio, SUM(cantidad) muertes_sisc FROM fact_muerte_sisc GROUP BY 1)
-        SELECT s.*, v.victimas, v.muertos_medata, m.muertes_sisc
-        FROM s LEFT JOIN v USING (anio) LEFT JOIN m USING (anio) ORDER BY anio""")
-    meses_anio = _df(con, "SELECT anio, COUNT(DISTINCT mes) meses FROM u GROUP BY 1")
+             m AS (SELECT anio, SUM(cantidad) muertes_sisc FROM fact_muerte_sisc GROUP BY 1),
+             -- todos los años con siniestros o con víctimas (ninguna víctima queda fuera del total anual)
+             a AS (SELECT anio FROM u UNION SELECT anio FROM fact_victima)
+        SELECT a.anio, s.siniestros, s.con_heridos, s.solo_danos, s.con_muertos, s.fuente,
+               v.victimas, v.muertos_medata, m.muertes_sisc
+        FROM a LEFT JOIN s USING (anio) LEFT JOIN v USING (anio) LEFT JOIN m USING (anio) ORDER BY anio""")
+    meses_anio = _df(con, """
+        SELECT a.anio, s.meses, v.meses_victimas, m.meses_sisc FROM
+          (SELECT anio FROM u UNION SELECT anio FROM fact_victima) a
+          LEFT JOIN (SELECT anio, COUNT(DISTINCT mes) meses FROM u GROUP BY 1) s USING (anio)
+          LEFT JOIN (SELECT anio, COUNT(DISTINCT mes) meses_victimas FROM fact_victima GROUP BY 1) v USING (anio)
+          LEFT JOIN (SELECT anio, COUNT(DISTINCT mes) meses_sisc FROM fact_muerte_sisc GROUP BY 1) m USING (anio)""")
     serie = serie.merge(meses_anio, on="anio")
+    for c in ("siniestros", "con_heridos", "solo_danos", "con_muertos"):
+        serie[c] = serie[c].fillna(0)
 
     calor = _df(con, "SELECT dia_semana, hora, COUNT(*) n FROM uh GROUP BY ALL")
     mat = [[0] * 24 for _ in range(7)]
@@ -164,6 +174,7 @@ def diagnostico(con, cfg) -> dict:
             "victimas": v[0], "muertos_medata": v[1], "pct_moto": v[2], "victimas_desde": v[3], "victimas_hasta": v[4],
             "letalidad_x1000": 1000 * v[1] / v[0], "pct_lejos_cctv": lejos[0], "mediana_m_cctv": lejos[1],
             "muertes_sisc": sisc[0], "sisc_desde": sisc[1], "sisc_hasta": sisc[2],
+            "victimas_sin_comuna_geo": _one(con, "SELECT COUNT(*) FROM fact_victima WHERE codigo_comuna_geo IS NULL")[0],
             "cctv": _one(con, "SELECT COUNT(*) FROM dim_camara WHERE tipo_camara='CCTV'")[0],
             "cctv_con_foto": _one(con, "SELECT COUNT(*) FROM dim_camara WHERE tipo_camara='CCTV' "
                                        "AND url_snapshot IS NOT NULL")[0],
@@ -249,6 +260,25 @@ def factores(con) -> list[dict]:
     return out
 
 
+def cobertura_muertes(con, corte: str) -> dict:
+    """Las «muertes» combinan dos unidades y terminan antes que los siniestros: se exponen para rotularlo."""
+    a = _one(con, f"SELECT COUNT(*), MIN(fecha), MAX(fecha) FROM fact_incidente WHERE gravedad_incidente = 'Con muertos' "
+                  f"AND fecha_hora < TIMESTAMP '{corte}'")
+    b = _one(con, f"SELECT SUM(cantidad), MIN(fecha), MAX(fecha) FROM fact_muerte_sisc WHERE fecha_hora >= TIMESTAMP '{corte}'")
+    hasta = str(b[2] or a[2])[:10]
+    return {
+        "tramos": [
+            {"fuente": "MEData · Incidentes viales", "unidad": "incidentes con muertos", "n": a[0],
+             "desde": str(a[1])[:10], "hasta": str(a[2])[:10]},
+            {"fuente": "MEData · Lesión fatal (SISC)", "unidad": "personas fallecidas", "n": b[0],
+             "desde": str(b[1])[:10] if b[1] else None, "hasta": str(b[2])[:10] if b[2] else None},
+        ],
+        "hasta": hasta,
+        "nota": f"Hasta ago-2020 se cuentan incidentes con muertos (MEData); desde sep-2020, personas fallecidas (SISC), "
+                f"que llega a {hasta[:7]}. Después de esa fecha los siniestros no tienen dato de muertes.",
+    }
+
+
 # ----------------------------------------------------------------------------- módulo 2: grilla de riesgo
 def grilla(con, cfg) -> dict:
     g = cfg["web"]["grid_deg"]
@@ -301,6 +331,7 @@ def grilla(con, cfg) -> dict:
         "perfil_hora": (ph / ph.sum()).tolist(),
         "perfil_dia": (np.array(pdia) / sum(pdia)).tolist(),
         "rr_lluvia": ll["rr"] if ll else None,
+        "cobertura_muertes": cobertura_muertes(con, cfg["web"]["corte_medata"]),
         "p_horas_lluvia": p_h_lluvia,
         "puntos": hot.to_dict("records"),
     }
@@ -380,7 +411,7 @@ def intervencion(con, cfg) -> dict:
     cub = _one(con, "SELECT AVG((dist_m_camara_cctv <= 300)::INT) FROM uh WHERE latitud IS NOT NULL AND anio >= 2019")
     return {"periodo": "2019-2025", "regla": "puntaje = siniestros con heridos + 10 × muertes (2019-2025); solo celdas de ~110 m "
             "cuya cámara CCTV más cercana está a más de 300 m", "puntos": top.to_dict("records"), "comunas_sin_cctv": sin_cctv.to_dict("records"),
-            "pct_cubierto_cctv": cub[0]}
+            "pct_cubierto_cctv": cub[0], "cobertura_muertes": cobertura_muertes(con, cfg["web"]["corte_medata"])}
 
 
 # ----------------------------------------------------------------------------- módulo 4: calidad
@@ -394,7 +425,7 @@ NOMBRES_REGLA = {
     "comuna_imputada_por_geo": "Comuna imputada por polígono", "fuera_de_medellin_a_cuarentena": "Fuera de Medellín (cuarentena)",
     "anio_con_basura_corregido": "Año con \\r pegado corregido", "texto_con_escapes_hex_reparado": "Texto con escapes \\xNN reparado",
     "edad_invalida_anulada": "Edad 0 o > 99 anulada", "edad_sin_info": "Edad sin información", "sexo_sin_info": "Sexo sin información",
-    "variantes_mayus_minus_unificadas": "Variantes de mayúsculas unificadas", "actor_sin_dato": "Actor vial sin dato",
+    "variantes_mayus_minus_unificadas": "Variantes de mayúsculas unificadas (Sexo y Condición)", "actor_sin_dato": "Actor vial sin dato",
     "precipitacion_vacia_pct": "Columna precipitación vacía (%)",
 }
 DATASETS = {
@@ -453,6 +484,25 @@ def jurado(con, cfg) -> dict:
             "corte_medata": cfg["web"]["corte_medata"]}
 
 
+def controles(con, diag: dict) -> list[str]:
+    """Controles de consistencia de lo que se publica. Lista vacía = todo cuadra."""
+    fallas = []
+    k, s = diag["kpis"], diag["serie"]
+    if sum(r["siniestros"] or 0 for r in s) != k["siniestros"]:
+        fallas.append("la suma de la serie anual no coincide con el total de siniestros")
+    her = sum((r["con_heridos"] or 0) + (r["con_muertos"] or 0) for r in s)
+    if her != k["siniestros_heridos"]:
+        fallas.append("heridos + muertos por año no coincide con el total de siniestros con heridos")
+    if sum((r["con_heridos"] or 0) + (r["con_muertos"] or 0) + (r["solo_danos"] or 0) for r in s) > k["siniestros"]:
+        fallas.append("la suma por gravedad supera el total de siniestros")
+    dup = _one(con, "SELECT COUNT(*) - COUNT(DISTINCT radicado) FROM u WHERE radicado IS NOT NULL")[0]
+    if dup:
+        fallas.append(f"{dup} radicados repetidos en la serie unificada")
+    if sum(r["victimas"] or 0 for r in s) != k["victimas"]:
+        fallas.append("la suma anual de víctimas no coincide con el total")
+    return fallas
+
+
 def meta(con, cfg) -> dict:
     man_p = cfg["paths"]["raw"] / "_manifest.json"
     man = json.loads(man_p.read_text(encoding="utf-8")) if man_p.exists() else {}
@@ -496,7 +546,11 @@ def run_web(cfg: dict) -> dict:
         tam["intervencion"] = _write(out, "intervencion", intervencion(con, cfg))
         tam["calidad"] = _write(out, "calidad", calidad(cfg))
         tam["jurado"] = _write(out, "jurado", jurado(con, cfg))
-        tam["meta"] = _write(out, "meta", meta(con, cfg))
+        m = meta(con, cfg)
+        m["controles_consistencia"] = controles(con, diag)
+        for f in m["controles_consistencia"]:
+            log.error("[web] CONTROL DE CONSISTENCIA: %s", f)
+        tam["meta"] = _write(out, "meta", m)
     finally:
         con.close()
     for k, n in tam.items():

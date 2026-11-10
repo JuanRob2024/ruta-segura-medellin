@@ -42,7 +42,7 @@
 
 | # | Hallazgo | Cifra | Dónde verlo |
 |---|---|---|---|
-| 1 | La mayoría de las víctimas cae **lejos de una cámara de circuito cerrado** | **70,2 %** de las víctimas georreferenciadas está a más de 300 m de una CCTV (mediana: 548 m). Entre 2019 y 2025, el **75 %** de los siniestros con heridos | Inicio, Módulo 1 y Módulo 3 |
+| 1 | La mayoría de las víctimas cae **lejos de una cámara de circuito cerrado** | **70,2 %** de las víctimas georreferenciadas está a más de 300 m de una CCTV (mediana: 548 m). Entre 2019 y 2025, el **75 %** de los siniestros con heridos también ocurrió a más de 300 m de una CCTV | Inicio, Módulo 1 y Módulo 3 |
 | 2 | La **hora pico** es el factor que más multiplica los siniestros | **1,95×** siniestros con heridos por hora en hora pico frente al resto del día hábil | Módulo 1 › Factores |
 | 3 | El **peatón** es el actor más vulnerable | **27,6** muertos por cada 1.000 peatones víctimas: **6,75×** la letalidad de un ocupante de vehículo. Bicicleta: 4,4× | Módulo 1 |
 | 4 | La **madrugada** es la franja más letal | **2,7×** la letalidad de la tarde; de noche, 1,4× | Módulo 1 |
@@ -276,7 +276,7 @@ de víctimas, pero no para el mapa.
 | Víctimas | Lat/lon invertidas | 2.104 | Si (lon, lat) cae en Medellín, se invierten | Corregidas + bandera |
 | Víctimas | Coma decimal (`"6,2669"`) | 100 % | `to_float_comma` | Corregidas |
 | Víctimas | Edad 0 o mayor de 99 | 1.336 | Código de relleno → nulo | Bandera |
-| Víctimas | `Sin Inf` / `Sin inf`, mayúsculas distintas | 7.511 | Valor canónico | Corregidas |
+| Víctimas | Variantes de mayúsculas en Sexo («Sin inf») y Condición («…motocicleta») | 7.511 | Valor canónico | Corregidas |
 | Víctimas | Punto fuera del polígono de Medellín | 2.726 | Se anula la coordenada; si tampoco hay comuna → cuarentena | Bandera / cuarentena (877) |
 | Incidentes | Coordenada comodín `[-75.7037, 6.2214]` | **19.611** | Lista en `config.yaml` | Coordenada anulada |
 | Incidentes | Año con `\r` pegado (`2019\r`) | 26.760 | Extraer dígitos | Corregidas |
@@ -341,9 +341,9 @@ flowchart LR
 | Corredor de una ruta | Celdas de 55 m con centro a ≤ 40 m de la ruta | Captura la vía y sus andenes sin meter calles paralelas (en el centro, a unos 80-100 m). Un siniestro geocodificado en la esquina de enfrente puede quedar fuera |
 | Nivel de riesgo | Percentiles 50/75/90 de la siniestralidad media de bloques de 3×3 celdas alrededor de cada celda con registros | Compara la ruta con vías reales, incluidas las celdas vacías vecinas, como en un corredor. «Bajo» no significa «sin riesgo» |
 | Cobertura de una cámara | 300 m | Estándar razonable para CCTV urbana; no considera obstáculos ni la dirección de la cámara |
-| Priorización (Módulo 3) | puntaje = siniestros con heridos + 10 × muertes (2019-2025), solo celdas sin CCTV a 300 m | Pondera la gravedad sin dejar que una sola muerte domine. El factor 10 es un supuesto explícito que se puede cambiar |
+| Priorización (Módulo 3) | puntaje = siniestros con heridos + 10 × muertes (2019-2025), solo celdas sin CCTV a 300 m | Pondera la gravedad sin dejar que una sola muerte domine. El factor 10 es un supuesto explícito que se puede cambiar. **Las «muertes» combinan dos unidades:** incidentes con muertos (MEData) hasta ago-2020 y personas fallecidas (SISC) desde sep-2020; el SISC termina en nov-2023, así que en 2024-2025 el puntaje no pondera muertes. La página lo rotula (`cobertura_muertes`) |
 | Duración del viaje | OSRM (carro y moto); 15 km/h en bici; 4,5 km/h a pie | El servidor gratuito solo calcula rutas en carro. A pie o en bici se usa la misma vía con otra velocidad |
-| Punto crítico | Celda de 110 m con ≥ 15 siniestros con heridos | Muestra solo lugares con evidencia suficiente |
+| Punto crítico | Celda de 110 m con ≥ 15 siniestros con heridos | Muestra solo lugares con evidencia suficiente. Es la definición de la página. La vista `v_puntos_criticos` de la bodega (≥ 20 víctimas MEData 2014-2021) es un insumo de análisis aparte |
 
 ---
 
@@ -503,11 +503,13 @@ flowchart TD
 
 | Capa | Qué protege | Dónde |
 |---|---|---|
-| Reintentos HTTP (4, con espera creciente ante 429 y 5xx) | Errores momentáneos del servidor | `common.http_session` |
+| Reintentos HTTP (4, con espera creciente ante 429 y 5xx; solo 1 reintento si ni siquiera hay conexión) | Errores momentáneos del servidor, sin multiplicar la espera cuando el servidor está caído | `common.http_session` |
+| Reintento por página de GeoMedellín (3 intentos con espera) | Un corte a mitad de una capa de cientos de páginas (siniestralidad) no tumba la capa completa | `ArcGISClient._pagina` |
+| Corte automático de GeoMedellín | Si ni la primera página de una capa responde (`ServidorCaido`), las demás capas se saltan y conservan su última copia buena | `run_extract` |
 | Descarga reanudable a `.part` | Cortes de red a mitad de un archivo grande (pasó en la V1 a los 38 MB) | `extract._stream` |
 | Selenium y datastore paginado de MEData | Cambios en la API de metadatos o en el enlace de descarga | `_metadata_selenium`, `_datastore_dump` |
 | Archivo temporal + validación | Que un archivo a medias, vacío o recortado reemplace al bueno. Umbral configurable en `config.yaml › validacion.min_proporcion` | `contar_filas_csv`, `validar` |
-| Aislamiento por fuente | Una fuente caída no detiene a las demás | `run_extract` |
+| Aislamiento por fuente | Una fuente caída no detiene a las demás. Con `--only`, el reporte conserva el último estado de las fuentes que no se corrieron | `run_extract` |
 | Reporte y código de salida 2 | Que una corrida programada con fuentes viejas pase inadvertida: el Programador de tareas de Windows muestra el resultado 2 y la página avisa en el encabezado y en el capítulo 4 | `data/reports/extraccion.json` |
 | Copias de `data/raw` | Borrado, daño o pérdida del disco: 3 copias comprimidas rotativas, más una copia externa opcional (`respaldo.copia_externa`, p. ej. una carpeta de OneDrive) | `etl/respaldo.py` |
 | Datos de la página en git | Volver a una versión publicada anterior; GitHub Pages sigue mostrando la última buena | `web/data/*.js` |
@@ -530,6 +532,12 @@ originales (MEData, GeoMedellín, datos.gov.co, SIATA). Para recuperar: `python 
 * **Rutas.** El servidor gratuito de OSRM no tiene perfil a pie ni en bici, ni tráfico en tiempo real. Su duración es la de
   vía libre.
 * **Coordenadas.** 22.713 víctimas sin coordenada válida quedan fuera del análisis espacial (sí cuentan en los totales).
+* **Muertes en la grilla y en el puntaje.** Hasta ago-2020 son incidentes con muertos (MEData); desde sep-2020, personas
+  fallecidas (SISC), que llega a nov-2023. En 2024-2025 no hay dato de muertes por lugar.
+* **Duplicados de víctimas.** Sin un identificador por persona, dos víctimas reales del mismo incidente con igual edad, sexo y
+  condición son filas idénticas: las 197 que se descartan (0,08 %) pueden incluir algunos casos así.
+* **Años incompletos.** 2014 (siniestros desde julio), 2021 (víctimas hasta septiembre) y 2023 (SISC hasta noviembre) no son
+  caídas reales; la página del jurado los marca.
 * **Pronóstico.** Ninguna fuente admitida publica un pronóstico del tiempo. Se usa la lluvia actual (SIATA) y la probabilidad
   histórica por mes y hora (IDEAM).
 

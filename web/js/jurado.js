@@ -40,6 +40,8 @@
       ['Lluvia: razón de tasas por hora', 1.02, D.factores.find((f) => f.id === 'lluvia')?.rr, U.n2, 0.005, 'factores.lluvia (IDEAM)'],
       ['Comuna sin CCTV con más siniestros 2019-2025', 'Aranjuez', I.comunas_sin_cctv[0]?.comuna, (x) => x, null, 'intervencion.comunas_sin_cctv'],
       ['Punto prioritario n.º 1 sin CCTV', 'CR 53 CL 53', I.puntos[0]?.dir, (x) => x, null, 'intervencion.puntos'],
+      ['Controles de consistencia (total = Σ años = Σ gravedad; sin radicados repetidos)', 'sin fallas',
+        (RSM.meta.controles_consistencia || []).length ? RSM.meta.controles_consistencia.join('; ') : 'sin fallas', (x) => x, null, 'meta.controles_consistencia'],
     ];
     U.$('#t-valida').innerHTML = `<thead><tr><th>Cifra declarada</th><th class="n">Declarado</th><th class="n">Calculado ahora</th><th>Estado</th><th>Origen</th></tr></thead><tbody>${
       V.map(([t, dec, cal, f, tol, src]) => {
@@ -79,7 +81,10 @@
     document.querySelectorAll('#e-kpis .kpi .v').forEach((el, i) => U.contar(el, cuentas[i][0], cuentas[i][1]));
 
     const s = D.serie;
-    U.$('#e-serie-nota').innerHTML = 'Barras: siniestros por gravedad; línea roja: muertes SISC. 2014 empieza en julio. <b>Desde 2023 GeoMedellín casi no publica «solo daños»</b>: por eso los análisis usan solo siniestros con heridos o muertos.';
+    const parciales = (campo, etq) => s.filter((r) => r[campo] && r[campo] < 12).map((r) => `${r.anio} (${r[campo]} meses de ${etq})`);
+    const parc = [...parciales('meses', 'siniestros'), ...parciales('meses_victimas', 'víctimas'), ...parciales('meses_sisc', 'muertes SISC')];
+    U.$('#e-serie-nota').innerHTML = 'Barras: siniestros por gravedad; línea roja: muertes SISC. <b>Desde 2023 GeoMedellín casi no publica «solo daños»</b>: por eso los análisis usan solo siniestros con heridos o muertos.' +
+      (parc.length ? ` <b>Años incompletos</b> (no son caídas reales): ${parc.join(' · ')}.` : '');
     new Chart(U.$('#ch-serie'), {
       data: { labels: s.map((r) => r.anio), datasets: [
         { type: 'bar', label: 'Con heridos', data: s.map((r) => r.con_heridos), backgroundColor: P[0], stack: 's' },
@@ -132,6 +137,8 @@
     new Chart(U.$('#ch-edad'), { type: 'bar', data: { labels: gr, datasets: [
       { label: 'Hombres', data: gr.map((g) => val(g, 'M')), backgroundColor: P[0] }, { label: 'Mujeres', data: gr.map((g) => val(g, 'F')), backgroundColor: P[1] }] } });
 
+    U.$('#t-comunas').closest('.card').querySelector('.note').textContent =
+      `Ubicadas con el polígono oficial. Resaltadas, las comunas sin cámaras CCTV. ${U.n0(D.kpis.victimas_sin_comuna_geo)} víctimas sin coordenada válida no se pueden asignar a una comuna: cuentan en el total de la ciudad, pero no en esta tabla.`;
     U.$('#t-comunas').innerHTML = `<thead><tr><th>Comuna</th><th class="n">Siniestros con heridos 2014-2025</th><th class="n">2021-2025</th>
       <th class="n">Víctimas</th><th class="n">Muertos</th><th class="n">CCTV</th><th class="n">Fotomultas</th><th class="n">Apoyo semafórico</th></tr></thead><tbody>${
       D.comunas.map((r) => `<tr class="${r.cctv === 0 ? 'hi' : ''}"><td>${U.esc(r.comuna)}</td><td class="n">${U.n0(r.siniestros)}</td><td class="n">${U.n0(r.siniestros_2021_2025)}</td>
@@ -311,6 +318,8 @@
       ['ruler', 'La probabilidad de una ruta mide qué tan frecuentes son los siniestros en el corredor, no la probabilidad personal de accidentarse: no hay conteos de vehículos abiertos por vía (exposición).'],
       ['video', 'Cobertura = distancia en línea recta ≤ radio. No considera hacia dónde apunta la cámara ni los obstáculos. Cercanía a una cámara es asociación, no causalidad.'],
       ['folder-open', 'Base comparable: solo siniestros con heridos o muertos, porque GeoMedellín dejó de publicar «solo daños» en 2023. Las víctimas por actor llegan a sep-2021.'],
+      ['skull', `Muertes en la grilla y en el puntaje del capítulo 3: ${RSM.intervencion.cobertura_muertes?.nota || ''}`],
+      ['clone', 'Víctimas: sin un identificador por persona, dos víctimas reales del mismo incidente con igual edad, sexo y condición se ven como filas idénticas; las 197 que se descartan como duplicadas (0,08 %) pueden incluir algunos casos así.'],
       ['cloud-rain', 'La lluvia histórica es una sola estación IDEAM (Olaya Herrera) con vacíos; solo se usan horas observadas. SIATA en vivo da el detalle espacial en la consulta de ruta.'],
       ['calculator', 'Simulador A: las celdas se miden desde su centro; el algoritmo voraz da una buena solución, no necesariamente la óptima global.'],
     ];
