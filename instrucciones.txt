@@ -94,6 +94,7 @@ Equipo: Equipo IA 02 (Juan Pablo Robledo Urrego, Yulieth Marcela Urrego Restrepo
    YOLOv8 es opcional y viene desactivado (config.yaml > conteo_vehiculos).
 
 7. CONTACTO
-   Juan Pablo Robledo Urrego (líder) · [COMPLETAR: correo del líder]
+   Juan Pablo Robledo Urrego (líder) · Yulieth Marcela Urrego Restrepo
+   ITM · Ingeniería de Sistemas · el correo de contacto va en la guía entregada al ITM
 
 Documentación técnica completa: DOCUMENTACION.md
