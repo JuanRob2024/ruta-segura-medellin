@@ -36,7 +36,7 @@ Equipo: Equipo IA 02 (Juan Pablo Robledo Urrego, Yulieth Marcela Urrego Restrepo
    data/reports/extraccion.json. Basta con volver a ejecutar  python -m etl run  más tarde.
    En una primera ejecución sin copias previas, la fuente caída simplemente no aparece.
 
-4. QUÉ DEBE VER EL JURADO
+4. QUÉ DEBES REVISAR
    a) La consola termina con "WEB terminado" y "Página lista: abra web/index.html".
       Se crean data/warehouse/movilidad_medellin.duckdb, data/quarantine/*_rechazados.csv,
       data/reports/calidad_datos.md y web/data/*.js con la fecha de la corrida.
@@ -92,9 +92,5 @@ Equipo: Equipo IA 02 (Juan Pablo Robledo Urrego, Yulieth Marcela Urrego Restrepo
    documentación. Las cifras se verificaron ejecutando el pipeline con datos reales
    (verificar_hallazgos.py) y con 36 pruebas automáticas. El conteo de vehículos con
    YOLOv8 es opcional y viene desactivado (config.yaml > conteo_vehiculos).
-
-7. CONTACTO
-   Juan Pablo Robledo Urrego (líder) · Yulieth Marcela Urrego Restrepo
-   ITM · Ingeniería de Sistemas · el correo de contacto va en la guía entregada al ITM
 
 Documentación técnica completa: DOCUMENTACION.md
