@@ -48,7 +48,7 @@
 | 4 | La **madrugada** es la franja más letal | **2,7×** la letalidad de la tarde; de noche, 1,4× | Módulo 1 |
 | 5 | La **lluvia** casi no cambia la frecuencia de siniestros por hora | **1,02×** con lluvia frente a sin lluvia (61 mil horas observadas por IDEAM). La V1 decía +21 % con Open-Meteo: era un artefacto de una fuente modelada | Módulo 1 › Factores |
 | 6 | **Cinco comunas sin ninguna CCTV** concentran miles de siniestros | Aranjuez (10.327 siniestros con heridos 2019-2025), Manrique (6.603), Villa Hermosa (6.452), Doce de Octubre (6.357) y San Javier (4.518) | Módulo 3 |
-| 7 | Las fuentes traen **ruido grave** | 77 % de filas vacías en Víctimas; 19.611 coordenadas comodín en Incidentes; 3.909 siniestros en comodines no declarados en GeoMedellín; columna de precipitación 100 % vacía en un conjunto SISC | Módulo 4 |
+| 7 | Las fuentes traen **ruido grave** | 77,5 % de filas vacías en Víctimas; 19.611 coordenadas comodín en Incidentes; 3.909 siniestros en comodines no declarados en GeoMedellín; columna de precipitación 100 % vacía en un conjunto SISC | Módulo 4 |
 
 ---
 
@@ -271,7 +271,7 @@ de víctimas, pero no para el mapa.
 
 | Fuente | Problema detectado | Filas | Regla | Destino |
 |---|---|---|---|---|
-| Víctimas | CSV rellenado hasta el límite de Excel (1.048.576) | **812.474** (77 %) | Eliminar filas 100 % vacías | Se eliminan |
+| Víctimas | CSV rellenado hasta el límite de Excel (1.048.576) | **812.474** (77,5 %) | Eliminar filas 100 % vacías | Se eliminan |
 | Víctimas | Duplicados exactos | 197 | Conservar el primero | Cuarentena |
 | Víctimas | Lat/lon invertidas | 2.104 | Si (lon, lat) cae en Medellín, se invierten | Corregidas + bandera |
 | Víctimas | Coma decimal (`"6,2669"`) | 100 % | `to_float_comma` | Corregidas |

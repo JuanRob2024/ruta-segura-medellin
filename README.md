@@ -24,7 +24,7 @@ python -m venv .venv
 pip install -r requirements.txt
 python -m etl run               # ~15 min la primera vez
 python verificar_hallazgos.py
-pytest -q                       # 20 pruebas
+pytest -q                       # 36 pruebas
 ```
 
 ## Hallazgos

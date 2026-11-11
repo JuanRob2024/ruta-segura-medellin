@@ -12,6 +12,16 @@
     pct: (x, d = 1) => (x == null || isNaN(x) ? '—' : (d === 0 ? nf0 : d === 2 ? nf2 : nf1).format(x * 100) + ' %'),
     veces: (x) => (x == null || isNaN(x) ? '—' : nf2.format(x) + '×'),
     fecha: (s) => (s ? String(s).slice(0, 10) : '—'),
+    /* «sept-2021» a partir de una fecha ISO (para que los cortes de cada fuente salgan de los datos) */
+    mesAnio: (iso) => (iso ? new Date(String(iso).slice(0, 10) + 'T12:00:00').toLocaleString('es-CO', { month: 'short', year: 'numeric' }).replace('.', '').replace(' de ', '-').replace(' ', '-') : '—'),
+    /* datos de calidad de una fuente: {leidas, limpias, rango, r: {regla: n}} */
+    cal: (id) => { const f = (window.RSM?.calidad?.fuentes || []).find((x) => x.id === id) || {}; return { ...f, r: Object.fromEntries((f.reglas || []).map((x) => [x.regla, x.n])) }; },
+    /* caída de «solo daños»: último año con publicación normal y el primero con la caída */
+    caidaSoloDanos: () => {
+      const s = (window.RSM?.diagnostico?.serie || []).filter((r) => r.solo_danos != null);
+      for (let i = 1; i < s.length; i++) if (s[i - 1].solo_danos > 1000 && s[i].solo_danos < 0.1 * s[i - 1].solo_danos) return { antes: s[i - 1], desde: s[i] };
+      return null;
+    },
     esc: (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])),
     color: (name) => css().getPropertyValue(name).trim(),
     dark: () => true, /* interfaz oscura única */

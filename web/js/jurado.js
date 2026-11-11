@@ -317,9 +317,9 @@
     const L_ = [
       ['ruler', 'La probabilidad de una ruta mide qué tan frecuentes son los siniestros en el corredor, no la probabilidad personal de accidentarse: no hay conteos de vehículos abiertos por vía (exposición).'],
       ['video', 'Cobertura = distancia en línea recta ≤ radio. No considera hacia dónde apunta la cámara ni los obstáculos. Cercanía a una cámara es asociación, no causalidad.'],
-      ['folder-open', 'Base comparable: solo siniestros con heridos o muertos, porque GeoMedellín dejó de publicar «solo daños» en 2023. Las víctimas por actor llegan a sep-2021.'],
+      ['folder-open', `Base comparable: solo siniestros con heridos o muertos, porque GeoMedellín dejó de publicar «solo daños» en ${U.caidaSoloDanos()?.desde.anio ?? '2023'}. Las víctimas por actor llegan a ${U.mesAnio(U.cal('victimas').rango?.[1])}.`],
       ['skull', `Muertes en la grilla y en el puntaje del capítulo 3: ${RSM.intervencion.cobertura_muertes?.nota || ''}`],
-      ['clone', 'Víctimas: sin un identificador por persona, dos víctimas reales del mismo incidente con igual edad, sexo y condición se ven como filas idénticas; las 197 que se descartan como duplicadas (0,08 %) pueden incluir algunos casos así.'],
+      ['clone', `Víctimas: sin un identificador por persona, dos víctimas reales del mismo incidente con igual edad, sexo y condición se ven como filas idénticas; las ${U.n0(U.cal('victimas').r['Duplicados exactos (cuarentena)'])} que se descartan como duplicadas (${U.pct(U.cal('victimas').r['Duplicados exactos (cuarentena)'] / U.cal('victimas').limpias, 2)}) pueden incluir algunos casos así.`],
       ['cloud-rain', 'La lluvia histórica es una sola estación IDEAM (Olaya Herrera) con vacíos; solo se usan horas observadas. SIATA en vivo da el detalle espacial en la consulta de ruta.'],
       ['calculator', 'Simulador A: las celdas se miden desde su centro; el algoritmo voraz da una buena solución, no necesariamente la óptima global.'],
     ];

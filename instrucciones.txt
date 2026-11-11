@@ -1,5 +1,5 @@
 INSTRUCCIONES - Ruta Segura Medellín: siniestralidad vial, riesgo por ruta, cámaras y clima
-Equipo: Equipo IA 02 · Hackathon de Datos ITM 2026 · Modalidad: Pipelines automáticos
+Equipo: Equipo IA 02 (Juan Pablo Robledo Urrego, Yulieth Marcela Urrego Restrepo) · Hackathon de Datos ITM 2026 · Modalidad: Pipelines automáticos
 
 1. QUÉ ES
    Pipeline en Python que descarga, limpia e integra los datos abiertos de siniestralidad
@@ -48,7 +48,7 @@ Equipo: Equipo IA 02 · Hackathon de Datos ITM 2026 · Modalidad: Pipelines auto
         de vehículo. Madrugada: 2,71× la letalidad de la tarde. Lluvia: 1,02×.
       - Comunas sin ninguna CCTV: Aranjuez (10.327 siniestros con heridos 2019-2025),
         Manrique, Villa Hermosa, Doce de Octubre y San Javier.
-   c) pytest -q  →  20 passed.
+   c) pytest -q  →  36 passed.
    d) En la página (web/index.html):
       - Arriba a la derecha: "Datos actualizados: <fecha de su corrida>".
       - Módulo 2 > botón "Probar con un ejemplo: Parque Berrío → Universidad Nacional":
@@ -87,13 +87,13 @@ Equipo: Equipo IA 02 · Hackathon de Datos ITM 2026 · Modalidad: Pipelines auto
    rutas OSRM (router.project-osrm.org), búsqueda de direcciones Photon (komoot).
 
 6. USO DE IA
-   [COMPLETAR/AJUSTAR] Se usó un asistente de IA (Claude, de Anthropic) para apoyar la
+   Se usó un asistente de IA (Claude, de Anthropic) para apoyar la
    escritura y depuración del código, la revisión de calidad de los datos y la
    documentación. Las cifras se verificaron ejecutando el pipeline con datos reales
-   (verificar_hallazgos.py) y con 20 pruebas automáticas. El conteo de vehículos con
+   (verificar_hallazgos.py) y con 36 pruebas automáticas. El conteo de vehículos con
    YOLOv8 es opcional y viene desactivado (config.yaml > conteo_vehiculos).
 
 7. CONTACTO
-   [COMPLETAR: nombre del líder] · [COMPLETAR: correo del líder]
+   Juan Pablo Robledo Urrego (líder) · [COMPLETAR: correo del líder]
 
 Documentación técnica completa: DOCUMENTACION.md
